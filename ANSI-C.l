@@ -1,4 +1,5 @@
 %option noyywrap
+%option yylineno
 /* ^ a enlever plus tard */
 
 D                       [0-9]
@@ -70,7 +71,7 @@ IS                      (u|U|l|L)*
 "while"                     { return WHILE; }
 
 {L}({L}|{D})*               { return IDENTIFICATEUR; }
-{D}*                        { return CONSTANTE; }
+{D}+                        { return CONSTANTE; }
 
 0[xX]{H}+{IS}?              { /* A completer */ } /* HEX */ /* a supprimer ?? */
 0{D}+{IS}?                  { /* A completer */ } /* ?? */ /* a supprimer ?? */
@@ -111,8 +112,7 @@ L?\"(\\.|[^\\"])*\"         { /* A completer */ } /* STRING */ /* a supprimer ??
 ","                         { return ','; }
 "="                         { return '='; }
 
-[ \t\v\f]                   { /* Ignorer les espaces blancs */ }
-\n                          { yylineno++; }
+[ \t\v\n\f]                 { /* Ignorer les espaces blancs */ }
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* Ignorer les commentaires */ }
 .                           { fprintf (stderr, "[ERREUR] Erreur lexicale %s à la ligne %d.\n", yytext, yylineno); }
 %%
