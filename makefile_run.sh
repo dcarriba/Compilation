@@ -17,9 +17,9 @@ if [ ! -d "Tests" ]; then
     exit 1
 fi
 
-# Appliquer l'analyseur lexical à tous les fichiers du dossier Tests
-echo "Analyse des fichiers dans le dossier 'Tests'..."
-for file in Tests/*; do
+# Appliquer l'analyseur lexical uniquement aux fichiers .c dans le dossier Tests
+echo "Analyse des fichiers .c dans le dossier 'Tests'..."
+for file in Tests/*.c; do
     if [ -f "$file" ]; then
         echo "Analyse de: $file"
         ./analyseur_lexic < "$file"
