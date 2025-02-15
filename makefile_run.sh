@@ -11,13 +11,13 @@ if [ ! -f analyseur_lexic ]; then
     exit 1
 fi
 
-# Vérifier si le dossier Tests existe
+# Vérifier si Tests existe
 if [ ! -d "Tests" ]; then
     echo "Erreur: Le dossier 'Tests' n'existe pas."
     exit 1
 fi
 
-# Appliquer l'analyseur lexical uniquement aux fichiers .c dans le dossier Tests
+# Appliquer l'analyseur lexical aux fichiers .c dans Tests
 echo "Analyse des fichiers .c dans le dossier 'Tests'..."
 for file in Tests/*.c; do
     if [ -f "$file" ]; then
