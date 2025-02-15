@@ -47,10 +47,6 @@ IS                      (u|U|l|L)*
 #define NEQ 276
 #define NOT '!'
 #define EXTERN 277
-#define THEN '{' /* pas sur */
-#define OP 278 /* pas sur */
-#define REL 279 /* pas sur */
-#define programme 280 /* pas sur */
 
 
 /* Ne gere pas les commentaires. A rajouter */
@@ -104,20 +100,45 @@ L?\"(\\.|[^\\"])*\"         { /* A completer */ } /* STRING */ /* a supprimer ??
 "=="                        { return EQ; }
 "!="                        { return NEQ; }
 "!"                         { return NOT; }
-"{"                         { return THEN; } /* pas sur */
+"{"                         { return '{'; }
+"}"                         { return '}'; }
+"("                         { return '('; }
+")"                         { return ')'; }
+"["                         { return '['; }
+"]"                         { return ']'; }
+";"                         { return ';'; }
+":"                         { return ':'; }
+","                         { return ','; }
+"="                         { return '='; }
 
-[ \t\v\n\f]                 { /* Ignorer les espaces blancs */ }
+[ \t\v\f]                   { /* Ignorer les espaces blancs */ }
+\n                          { yylineno++; }
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* Ignorer les commentaires */ }
-.                           { fprintf (stderr, "erreur lexicale %s à la ligne %d.\n", yytext, yylineno); }
+.                           { fprintf (stderr, "[ERREUR] Erreur lexicale %s à la ligne %d.\n", yytext, yylineno); }
 %%
-/* ^ peut etre rajouter les characteres "(", ")", "[", "]", ";", etc. */
 
-int main(){
+int main(int argc, char* argv[]){
+    FILE* fichier;
+    char* nom_fichier;
+    if (argc == 1){
+        yyin = stdin;
+    } else if (argc == 2){
+        nom_fichier = argv[1];
+        if ((fichier=fopen(nom_fichier,"r")) == NULL) { /*Si fichier existe pas Alors erreur*/
+            fprintf(stderr,"[ERREUR] Erreur de lecture du ficher : %s\n",nom_fichier);
+            return 1;
+        }
+        yyin = fichier;
+    } else {
+        fprintf(stderr,"[ERREUR] Veuillez ne pas donner plus d'un fichier en argument.\n");
+        return 2;
+    }
     printf("Codes des tokens retournés par yylex:\n");
     int token_courant = yylex();
     do {
         printf("%d\n", token_courant);
         token_courant = yylex();
     } while (token_courant != TOKEN_EOF);
+    if (argc == 2) fclose(fichier);
     return 0;
 }
