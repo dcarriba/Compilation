@@ -1,4 +1,13 @@
 %{
+
+#include <stdio.h>
+#include <stdlib.h>
+
+extern FILE *yyin;
+extern int yylineno;
+int yylex();
+int yyerror();
+
 %}
 %token IDENTIFICATEUR CONSTANTE VOID INT FOR WHILE IF ELSE SWITCH CASE DEFAULT
 %token BREAK RETURN PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
@@ -46,7 +55,8 @@ type	:
 ;
 liste_parms	:	
 		liste_parms ',' parm
-	|	
+	|	parm
+    |
 ;
 parm	:	
 		INT IDENTIFICATEUR
@@ -102,7 +112,8 @@ expression	:
 ;
 liste_expressions	:	
 		liste_expressions ',' expression
-	|
+	|   expression
+    |
 ;
 condition	:	
 		NOT '(' condition ')'
@@ -133,3 +144,29 @@ binary_comp	:
 	|	NEQ
 ;
 %%
+
+int yyerror(char *s){
+    fprintf(stderr, "%s. Ligne : %d\n", s, yylineno);
+    exit(1);
+}
+
+int main(int argc, char* argv[]){
+    FILE* fichier;
+    char* nom_fichier;
+    if (argc == 1){
+        yyin = stdin;
+    } else if (argc == 2){
+        nom_fichier = argv[1];
+        if ((fichier=fopen(nom_fichier,"r")) == NULL) { /*Si fichier existe pas Alors erreur*/
+            fprintf(stderr,"[ERREUR] Erreur de lecture du ficher : %s\n",nom_fichier);
+            return 1;
+        }
+        yyin = fichier;
+    } else {
+        fprintf(stderr,"[ERREUR] Veuillez ne pas donner plus d'un fichier en argument.\n");
+        return 2;
+    }
+    yyparse();
+    printf("Analyse syntaxique valide!\n");
+    return 0;
+}
