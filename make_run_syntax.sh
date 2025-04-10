@@ -2,7 +2,10 @@
 
 # Compilation de l'analyseur syntaxique
 echo "Compilation de l'analyseur syntaxique..."
-make
+yacc -d -o y.tab.c miniC.y
+lex -o lex.yy.c ANSI-C.l
+gcc  lex.yy.c y.tab.c -o analyse_syntax
+rm -f lex.yy.c y.tab.c y.tab.h
 
 # Vérifier si la compilation a réussi
 if [ ! -f analyse_syntax ]; then

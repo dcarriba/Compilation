@@ -32,7 +32,7 @@ liste_declarations	:
 ;
 liste_fonctions	:	
 		liste_fonctions fonction
-|               fonction
+	|	fonction
 ;
 declaration	:	
 		type liste_declarateurs ';'
@@ -56,7 +56,7 @@ type	:
 liste_parms	:	
 		liste_parms ',' parm
 	|	parm
-    |
+	|
 ;
 parm	:	
 		INT IDENTIFICATEUR
@@ -112,8 +112,8 @@ expression	:
 ;
 liste_expressions	:	
 		liste_expressions ',' expression
-	|   expression
-    |
+	|	expression
+	|
 ;
 condition	:	
 		NOT '(' condition ')'
@@ -123,11 +123,11 @@ condition	:
 ;
 binary_op	:	
 		PLUS
-	|       MOINS
+	|	MOINS
 	|	MUL
 	|	DIV
-	|       LSHIFT
-	|       RSHIFT
+	|	LSHIFT	
+	|	RSHIFT
 	|	BAND
 	|	BOR
 ;
@@ -146,7 +146,7 @@ binary_comp	:
 %%
 
 int yyerror(char *s){
-    fprintf(stderr, "%s. Ligne : %d\n", s, yylineno);
+    fprintf(stderr, "[ERREUR] %s. Ligne : %d\n", s, yylineno);
     exit(1);
 }
 
