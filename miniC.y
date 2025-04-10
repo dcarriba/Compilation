@@ -146,7 +146,7 @@ binary_comp	:
 %%
 
 int yyerror(char *s){
-    fprintf(stderr, "[ERREUR] %s. Ligne : %d\n", s, yylineno);
+    fprintf(stderr, "[ERREUR] %s à la ligne %d\n", s, yylineno);
     exit(1);
 }
 
@@ -157,13 +157,14 @@ int main(int argc, char* argv[]){
         yyin = stdin;
     } else if (argc == 2){
         nom_fichier = argv[1];
-        if ((fichier=fopen(nom_fichier,"r")) == NULL) { /*Si fichier existe pas Alors erreur*/
-            fprintf(stderr,"[ERREUR] Erreur de lecture du ficher : %s\n",nom_fichier);
+        /* si fichier existe pas alors erreur */
+        if ((fichier = fopen(nom_fichier,"r")) == NULL){ 
+            fprintf(stderr, "[ERREUR] Erreur de lecture du ficher : %s\n", nom_fichier);
             return 1;
         }
         yyin = fichier;
     } else {
-        fprintf(stderr,"[ERREUR] Veuillez ne pas donner plus d'un fichier en argument.\n");
+        fprintf(stderr, "[ERREUR] Veuillez ne pas donner plus d'un fichier en argument.\n");
         return 2;
     }
     yyparse();

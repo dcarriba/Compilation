@@ -65,5 +65,5 @@ int yyerror(char *s);
 
 [ \t\v\n\f]                 { /* Ignorer les espaces blancs */ }
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* Ignorer les commentaires */ }
-.                           { fprintf (stderr, "[ERREUR] Erreur lexicale %s à la ligne %d.\n", yytext, yylineno); }
+.                           { fprintf (stderr, "[ERREUR] lexical error %s à la ligne %d\n", yytext, yylineno); exit(1); }
 %%
