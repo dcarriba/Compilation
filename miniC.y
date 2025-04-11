@@ -54,9 +54,12 @@ type	:
 	|	INT
 ;
 liste_parms	:	
-		liste_parms ',' parm
-	|	parm
+		l_parms
 	|
+;
+l_parms :
+		l_parms ',' parm
+    |	parm
 ;
 parm	:	
 		INT IDENTIFICATEUR
@@ -111,9 +114,12 @@ expression	:
 	|	IDENTIFICATEUR '(' liste_expressions ')'
 ;
 liste_expressions	:	
-		liste_expressions ',' expression
-	|	expression
+		l_expr
 	|
+;
+l_expr	:
+		l_expr ',' expression
+    |	expression
 ;
 condition	:	
 		NOT '(' condition ')'
