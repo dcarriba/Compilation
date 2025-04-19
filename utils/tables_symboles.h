@@ -1,7 +1,7 @@
 #ifndef TABLES_SYMBOLES_H
 #define TABLES_SYMBOLES_H
 
-typedef enum { INT, STRING } type_t;
+typedef enum { INT, STRING,VOID} type_t;
 
 
 typedef struct symbole {
@@ -10,7 +10,7 @@ typedef struct symbole {
     int nbDimensions;
     int *tailles;
     int is_function;
-    type_t type; // si besoin
+    type_t type;
     struct symbole *suivant;
 } symbole_t;
 
