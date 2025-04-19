@@ -125,6 +125,9 @@ void supprimer(table_t *table, char *nom) { /*  supprimer un symbole dans la tab
         if (strcmp((*pp)->nom, nom) == 0) {
             symbole_t *tmp = *pp;
             *pp = tmp->suivant;
+            if (tmp->tailles != NULL) {
+                free(tmp->tailles);
+            }
             free(tmp->nom);
             free(tmp);
             return;
@@ -139,6 +142,7 @@ void detruire_table(table_t *table) {  /* supprimer une table de symbole et vide
         symbole_t *tmp = s;
         s = s->suivant;
         free(tmp->nom);
+        if (tmp->tailles) free(tmp->tailles);
         free(tmp);
     }
     free(table);
