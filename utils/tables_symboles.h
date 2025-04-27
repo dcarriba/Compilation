@@ -1,7 +1,7 @@
 #ifndef TABLES_SYMBOLES_H
 #define TABLES_SYMBOLES_H
 
-typedef enum {INT_T, STRING_T, VOID_T} type_t;
+typedef enum {INT_T, VOID_T} type_t;
 
 typedef struct _symbole_t {
     char *nom;

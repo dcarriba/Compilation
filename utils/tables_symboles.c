@@ -175,7 +175,6 @@ void detruire_table(table_t *table) {
 int taille_type(type_t type) {
     switch (type) {
         case INT_T: return 4;
-        case STRING_T: return 8;
         default: return 0;
     }
 }
