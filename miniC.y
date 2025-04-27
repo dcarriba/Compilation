@@ -124,7 +124,7 @@ type:
         }
     |   INT{
             is_void = 0;
-            is_int = 1;        // Quand toutes les dimensions sont lues, on peut maintenant déclarer la variable
+            is_int = 1;        
 
             $$ = INT_T;
     }
