@@ -3,11 +3,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils/tables_symboles.h"
+#include "utils/abresPile.h"
+#include "utils/arbres.h"
 
 extern FILE *yyin;
 extern int yylineno;
 int yylex();
 int yyerror();
+
+table_t *pile_talbles = NULL;
+nodePile pile_node = {NULL};  
+exprPile pile_expr = {NULL};
+
+	int n_erreur = 0;
+	int n_warning = 0;
+	int yylineno;
+	int n_param = 0;
+	int is_void = 0;
+	int is_int = 0;
+	int is_switch = 0;
+	int has_return = 0;
+
+    int nb_dim = 0;
+    int nb_aritee = 0;
+
+    int warningError(char *s){
+		fprintf(stdout, "Warning : %s, dans la ligne %d: \n",s,yylineno);
+		n_warning++;
+	}
+	int yyerror(char *s){
+		fprintf(stderr,"\nError : %s, dans la ligne %d: \n",s ,yylineno);
+		n_erreur++;
+	}
+
+
+
 
 %}
 
@@ -17,6 +47,8 @@ int yyerror();
     int value;
 }
 
+%type <type> type declarateur
+%type <name> saut
 %token<name> IDENTIFICATEUR
 %token<value> CONSTANTE
 %token<type> VOID INT
@@ -49,23 +81,53 @@ liste_fonctions:
     |   fonction
 ;
 declaration:
-        type liste_declarateurs ';'
+        type liste_declarateurs ';' 
 ;
+
 liste_declarateurs:
         liste_declarateurs ',' declarateur
     |   declarateur
 ;
+
 declarateur:
-        IDENTIFICATEUR
-    |   declarateur '[' CONSTANTE ']'
+    IDENTIFICATEUR {
+        if (rechercher_dans_pile($1)) {  
+            yyerror("La variable " + $1 + " est déjà déclarée dans la même portée.");
+        } else {
+            nb_dim = 0;  
+            tailles = NULL;  
+        }
+    }
+    |   declarateur '[' CONSTANTE ']' { 
+        nb_aritee++;  
+        tailles = realloc(tailles, nb_aritee * sizeof(int));  
+        if (tailles == NULL) {
+            yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
+        }
+        tailles[nb_aritee - 1] = $3;  
+    }
+    |   { 
+        declarer($1, nb_aritee, nb_dim, tailles, $$, 0);  
+    }
 ;
+
 fonction:
         type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}'
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
 ;
 type:
-        VOID
-    |   INT
+        VOID {
+            is_void = 1;
+            is_int = 0; 
+            $$ = VOID_T;
+            
+        }
+    |   INT{
+            is_void = 0;
+            is_int = 1;        // Quand toutes les dimensions sont lues, on peut maintenant déclarer la variable
+
+            $$ = INT_T;
+    }
 ;
 liste_parms:
         l_parms
@@ -103,14 +165,35 @@ selection:
 ;
 saut:
         BREAK ';'
-    |   RETURN ';'
+    |   RETURN ';' {
+                has_return = 0;
+                char *parent = nodeName();
+                nodeEmpiler(&pile_node,parent,"RETURN",2,"");
+                $$ = parent;
+
+                }
     |   RETURN expression ';'
 ;
 affectation:
-        variable '=' expression
+    variable '=' expression {
+        char *nom = $1;  
+        int valeur = $3; 
+
+        symbole_t *s = rechercher_dans_pile(nom);
+
+        if (s) {
+            s->valeur = valeur;
+        } else {
+            yyerror("variable pas déclaré")
+        }
+    }
 ;
 bloc:
-        '{' liste_declarations liste_instructions '}'
+        '{' liste_declarations liste_instructions '}'{
+            push_table();
+
+            pop_table();
+        }
 ;
 appel:
         IDENTIFICATEUR '(' liste_expressions ')' ';'

@@ -37,11 +37,20 @@ Node nodeDepiler(nodePile *pile) {
     }
 
     Node *aDepiler = pile->premier;
-    Node copie = *aDepiler;
+    Node copie;
+    copie.nom = strdup_safe(aDepiler->nom);
+    copie.label = strdup_safe(aDepiler->label);
+    copie.numero = aDepiler->numero;
+    copie.suivant = strdup_safe(aDepiler->suivant);
+    copie.parent = NULL; 
     pile->premier = aDepiler->parent;
-    free(aDepiler); 
+    free(aDepiler->nom);
+    free(aDepiler->label);
+    free(aDepiler->suivant);
+    free(aDepiler);
     return copie;
 }
+
 
 void nodeAfficherPile(const nodePile *pile) {
     printf("\n--- Pile des noeuds ---\n");
@@ -59,7 +68,7 @@ void nodeAfficherPile(const nodePile *pile) {
     }
 }
 
-void mettreLienEntreParentEtNom(nodePile *pile, const char *nom, const char *parent) {
+void lienEntreParentEtNom(nodePile *pile, const char *nom, const char *parent) {
     if (!pile) {
         fprintf(stderr, "Erreur : Pile vide\n");
         exit(EXIT_FAILURE);
@@ -103,13 +112,21 @@ Expr exprDepiler(exprPile *pile) {
     }
 
     Expr *aDepiler = pile->premier;
-    Expr copie = *aDepiler;
+
+    Expr copie;
+    copie.nom = strdup_safe(aDepiler->nom); 
+    copie.parent = NULL;
+
     pile->premier = aDepiler->parent;
-    free(aDepiler); 
+
+    free(aDepiler->nom);
+    free(aDepiler);
+
     return copie;
 }
 
-void exprMettreLienEntreParentEtNom(nodePile *pile, exprPile *pile2, const char *parent) {
+
+void exprLienEntreParentEtNom(nodePile *pile, exprPile *pile2, const char *parent) {
     if (!pile2) {
         fprintf(stderr, "Erreur : Pile d'expression non initialisée\n");
         exit(EXIT_FAILURE);
