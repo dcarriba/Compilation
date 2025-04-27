@@ -6,4 +6,4 @@ char *concat(int nbArgs, ...);
 char *nodeName(void);
 char *nodeCreat(char *nom, char *label, int numero);
 
-#endif // ARBRE_H
+#endif

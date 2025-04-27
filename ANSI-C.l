@@ -7,9 +7,10 @@ L                       [a-zA-Z_]
 %{
 
 #include <stdio.h>
+#include "utils/tables_symboles.h"
 #include "y.tab.h"
 
-extern int yylval;
+extern YYSTYPE yylval;
 extern int yylineno;
 
 int yylex();
@@ -26,14 +27,27 @@ int yyerror(char *s);
 "extern"                    { return EXTERN; }
 "for"                       { return FOR; }
 "if"                        { return IF; }
-"int"                       { return INT; }
+"int"                       { 
+                                yylval.type = INT_T;
+                                return INT;
+                            }
 "return"                    { return RETURN; }
 "switch"                    { return SWITCH; }
-"void"                      { return VOID; }
+"void"                      {
+                                yylval.type = VOID_T;
+                                return VOID;
+                            }
 "while"                     { return WHILE; }
 
-{L}({L}|{D})*               { return IDENTIFICATEUR; }
-{D}+                        { return CONSTANTE; }
+{L}({L}|{D})*               {
+                                yylval.name = strdup(yytext);
+                                return IDENTIFICATEUR;
+                            }
+
+{D}+                        {
+                                yylval.value = atoi(yytext);
+                                return CONSTANTE; 
+                            }
 
 "+"                         { return PLUS; }
 "-"                         { return MOINS; }

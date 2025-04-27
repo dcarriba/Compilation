@@ -6,12 +6,16 @@
 
 int numNode = 1;
 
-char *concat(int nbArgs, ...) { /* concatene des chaines de characteres*/
+/* 
+ * Concatene des chaines de characteres
+ */
+char *concat(int nbArgs, ...) {
+    int i;
     va_list args;
     va_start(args, nbArgs);
 
     size_t total_length = 0;
-    for (int i = 0; i < nbArgs; i++) {
+    for (i = 0; i < nbArgs; i++) {
         const char *s = va_arg(args, const char *);
         if (s != NULL) total_length += strlen(s);
     }
@@ -23,10 +27,10 @@ char *concat(int nbArgs, ...) { /* concatene des chaines de characteres*/
         return NULL;
     }
 
-    result[0] = '\0'; // init string vide
+    result[0] = '\0'; /* init string vide */
 
     va_start(args, nbArgs);
-    for (int i = 0; i < nbArgs; i++) {
+    for (i = 0; i < nbArgs; i++) {
         const char *s = va_arg(args, const char *);
         if (s != NULL) strcat(result, s);
     }
@@ -35,13 +39,19 @@ char *concat(int nbArgs, ...) { /* concatene des chaines de characteres*/
     return result;
 }
 
-char *nodeName() { /*genere un nom unique*/
+/*
+ * Genere un nom unique
+ */
+char *nodeName() {
     char buffer[32];
     snprintf(buffer, sizeof(buffer), "node_%d", numNode++);
     return strdup(buffer);  
 }
 
-char *nodeCreat(char *nom, char *label, int numero) { /*applique le style nécésaire au noeud*/
+/*
+ * Applique le style nécésaire au noeud
+ */
+char *nodeCreat(char *nom, char *label, int numero) {
     const char *shape;
     const char *color;
     const char *style = "solid";
@@ -55,7 +65,8 @@ char *nodeCreat(char *nom, char *label, int numero) { /*applique le style nécé
         default:shape = "ellipse";      color = "black"; break;
     }
 
-    return concat(10,
+    return concat(
+        10,
         nom, 
         "[shape=", shape,
         " label=\"", label,
