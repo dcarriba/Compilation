@@ -48,7 +48,7 @@ exprPile pile_expr = {NULL};
 }
 
 %type <type> type declarateur
-%type <name> saut
+%type <name> saut bloc
 %token<name> IDENTIFICATEUR
 %token<value> CONSTANTE
 %token<type> VOID INT
@@ -68,6 +68,12 @@ exprPile pile_expr = {NULL};
 %start programme
 
 %%
+push : 
+    {push_table();}
+;
+pop :
+    {pop_table()}
+;
 
 programme:
         liste_declarations liste_fonctions
@@ -85,34 +91,47 @@ declaration:
 ;
 
 liste_declarateurs:
-        liste_declarateurs ',' declarateur
-    |   declarateur
+        liste_declarateurs ',' declarateur {
+            declarer(strdup($3), nb_dim, tailles, INT_T, 0);  
+        }
+    |   declarateur        { declarer(strdup($1), nb_dim, tailles, INT_T, 0);}
 ;
 
 declarateur:
     IDENTIFICATEUR {
         if (rechercher_dans_pile($1)) {  
-            yyerror("La variable " + $1 + " est déjà déclarée dans la même portée.");
+            yyerror("La variable est déjà déclarée dans la même portée.");
         } else {
-            nb_dim = 0;  
-            tailles = NULL;  
+            nb_dim = 0;
+            tailles = NULL;
+            $$ = $1;  
         }
     }
-    |   declarateur '[' CONSTANTE ']' { 
-        nb_aritee++;  
-        tailles = realloc(tailles, nb_aritee * sizeof(int));  
+  | declarateur '[' CONSTANTE ']' { 
+        nb_dim++;
+        tailles = realloc(tailles, nb_dim * sizeof(int));  
         if (tailles == NULL) {
             yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
         }
-        tailles[nb_aritee - 1] = $3;  
-    }
-    |   { 
-        declarer($1, nb_aritee, nb_dim, tailles, $$, 0);  
+        tailles[nb_dim - 1] = $3;  
+        $$ = $1;  
     }
 ;
 
+
 fonction:
-        type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}'
+        type IDENTIFICATEUR '('push liste_parms ')' '{' liste_declarations liste_instructions pop'}'
+        {
+            if(is_void == 0 && has_return == 0){
+                warningError("Absence de return pour une fonction de type int");
+
+            }
+            			else if(is_int == 0 && has_return == 1){
+				warningError("Return present dans une fonction de type void");
+
+			}
+			has_return = 0;
+        }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
 ;
 type:
@@ -157,7 +176,7 @@ iteration:
     |   WHILE '(' condition ')' instruction
 ;
 selection:
-        IF '(' condition ')' instruction %prec THEN
+        IF '(' condition ')' instruction %prec THEN 
     |   IF '(' condition ')' instruction ELSE instruction
     |   SWITCH '(' expression ')' instruction
     |   CASE CONSTANTE ':' instruction
@@ -189,10 +208,12 @@ affectation:
     }
 ;
 bloc:
-        '{' liste_declarations liste_instructions '}'{
-            push_table();
+        '{'push liste_declarations liste_instructions pop'}'{
+            char *bloc = nodeName();
+            exprLienEntreParentEtNom(&pileNode,&exprPileTab[exprInc--],bloc);
+            nodeEmpiler(&pileNode,bloc,"BLOC",6,"");
+            $$ = bloc;
 
-            pop_table();
         }
 ;
 appel:
