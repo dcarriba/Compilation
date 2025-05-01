@@ -43,3 +43,17 @@ make run
 ```bash
 make clean
 ```
+
+### Compiler pour pouvoir débugger avec gdb
+
+```bash
+make gdb
+```
+
+ensuite utiliser gdb :
+
+```bash
+gdb compilateur
+```
+
+Pour plus d'informations comment installer et utiliser la commande gdb [cliquez ici](https://www.gdbtutorial.com/) 

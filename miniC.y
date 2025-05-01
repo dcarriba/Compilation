@@ -251,9 +251,10 @@ expression:
             symbole_t *s;
             s = $2;
             s->valeur = (-($2->valeur));
+            $$ = s;
         }
     |   CONSTANTE {
-            $$->valeur = $1;
+
         }
     |   variable {
             $$ = $1;
