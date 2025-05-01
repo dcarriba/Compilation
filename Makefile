@@ -1,8 +1,11 @@
 CC = gcc
-OPTIONS =
+CFLAGS = -Wall -Wextra -Wpedantic
+LEX = flex
+YACC = bison
 EXECUTABLE = compilateur
-LEX = ANSI-C.l
-YACC = miniC.y
+
+LEX_INPUT = ANSI-C.l
+YACC_INPUT = miniC.y
 
 LEX_OUTPUT = lex.yy.c
 YACC_OUTPUT = y.tab.c
@@ -24,28 +27,28 @@ all: $(EXECUTABLE)
 
 # Pour compiler l'exécutable
 $(EXECUTABLE): $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
-	$(CC) $(OPTIONS) $(OBJECTS) $(LEX_OBJECT) $(YACC_OBJECT) -o $(EXECUTABLE)
+	$(CC) $(CFLAGS) $(OBJECTS) $(LEX_OBJECT) $(YACC_OBJECT) -o $(EXECUTABLE)
 	rm -f $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
 
 # Pour générer le fichier objet de lex.yy.c
 $(LEX_OBJECT): $(LEX_OUTPUT)
-	$(CC) $(OPTIONS) -c $(LEX_OUTPUT) -o $(LEX_OBJECT)
+	$(CC) $(CFLAGS) -c $(LEX_OUTPUT) -o $(LEX_OBJECT)
 
 # Pour générer le fichier objet de y.tab.c
 $(YACC_OBJECT): $(YACC_OUTPUT)
-	$(CC) $(OPTIONS) -c $(YACC_OUTPUT) -o $(YACC_OBJECT)
+	$(CC) $(CFLAGS) -c $(YACC_OUTPUT) -o $(YACC_OBJECT)
 
 # Pour compiler et générer les fichiers objets de tous les fichers utils/*.c
 $(OBJECTS): utils/%.o: utils/%.c
-	$(CC) $(OPTIONS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Pour compiler le lex
-$(LEX_OUTPUT): $(YACC_HEADER) $(LEX)
-	lex -o $(LEX_OUTPUT) $(LEX)
+$(LEX_OUTPUT): $(YACC_HEADER) $(LEX_INPUT)
+	$(LEX) -o $(LEX_OUTPUT) $(LEX_INPUT)
 
 # Pour compiler le yacc
-$(YACC_OUTPUT) $(YACC_HEADER): $(YACC)
-	yacc -d -o $(YACC_OUTPUT) $(YACC)
+$(YACC_OUTPUT) $(YACC_HEADER): $(YACC_INPUT)
+	$(YACC) -d -o $(YACC_OUTPUT) $(YACC_INPUT)
 
 # Règle qui compile et qui teste l'exécutable sur exempleminiC.c et tous les fichiers Tests/*.c
 run: $(EXECUTABLE)
@@ -57,7 +60,7 @@ run: $(EXECUTABLE)
 	@echo "Compilation réussie!\n"
 
 	@echo "Analyse de exempleminiC.c :"
-	@./$(EXECUTABLE) < "exempleminiC.c" 2>&1 || echo "Error $$?" >&2;
+	@./$(EXECUTABLE) exempleminiC.c 2>&1 || echo "Error $$?" >&2;
 	@echo "";
 
 	@if [ ! -d "Tests" ]; then \
@@ -68,7 +71,7 @@ run: $(EXECUTABLE)
 	@echo "Analyse des fichiers .c dans le dossier \"Tests\"...\n"
 	@for file in Tests/*.c; do \
 		echo "Analyse de $$file :"; \
-		./$(EXECUTABLE) < $$file 2>&1 || echo "Error $$?" >&2; \
+		./$(EXECUTABLE) $$file 2>&1 || echo "Error $$?" >&2; \
 		echo ""; \
 	done
 

@@ -28,7 +28,7 @@ int nb_dim = 0;
 int *tailles;
 int nb_aritee = 0;
 
-int warningError(char *s){
+void warningError(char *s){
     fprintf(stdout, "[Warning] %s à la ligne %d: \n",s,yylineno);
     n_warning++;
 }

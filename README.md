@@ -10,25 +10,35 @@ Daniel Carriba Nosrati
 
 ## Instructions pour compiler et exécuter
 
-- Compiler
+### Dépendances
+
+`gcc`, `flex` (lex) et `bison` (yacc) sont requis. Pour les installer utilisez les commandes suivantes :
+
+```bash
+sudo apt-get install flex                       
+sudo apt-get install bison
+sudo apt-get install gcc
+```
+
+### Compiler
 
 ```bash
 make
 ```
 
-- Exécuter
+### Exécuter
 
 ```bash
 ./compilateur <fichier>
 ```
 
-- Compiler et exécuter sur tous les fichiers tests (exempleminiC.c et Tests/*.c)
+### Compiler et exécuter sur tous les fichiers tests (exempleminiC.c et Tests/*.c)
 
 ```bash
 make run
 ```
 
-- Supprimer l'exécutable
+### Supprimer l'exécutable
 
 ```bash
 make clean

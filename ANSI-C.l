@@ -1,4 +1,4 @@
-%option noyywrap
+%option noyywrap noinput nounput
 %option yylineno
 
 D                       [0-9]
