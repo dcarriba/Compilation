@@ -1,6 +1,6 @@
 CC = gcc
 OPTIONS =
-EXECUTABLE = analyse_syntax
+EXECUTABLE = compilateur
 LEX = ANSI-C.l
 YACC = miniC.y
 

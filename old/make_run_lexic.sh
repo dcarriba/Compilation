@@ -15,18 +15,18 @@ fi
 echo "Compilation réussie!"
 
 # Appliquer l'analyseur lexical au fichier exempleminiC.c
-echo "Analyse de: exempleminiC.c"
-./analyse_lexic < "exempleminiC.c"
+echo "Analyse de: ../exempleminiC.c"
+./analyse_lexic < "../exempleminiC.c"
 
 # Vérifier si Tests existe
-if [ ! -d "Tests" ]; then
-    echo "Erreur: Le dossier 'Tests' n'existe pas."
+if [ ! -d "../Tests" ]; then
+    echo "Erreur: Le dossier '../Tests' n'existe pas."
     exit 1
 fi
 
 # Appliquer l'analyseur lexical aux fichiers .c dans Tests
-echo "Analyse des fichiers .c dans le dossier 'Tests'..."
-for file in Tests/*.c; do
+echo "Analyse des fichiers .c dans le dossier '../Tests'..."
+for file in ../Tests/*.c; do
     if [ -f "$file" ]; then
         echo "Analyse de: $file"
         ./analyse_lexic < "$file"

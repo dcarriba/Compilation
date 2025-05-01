@@ -5,4 +5,5 @@ y.tab.h
 analyseur_lexic
 analyse_lexic
 analyse_syntax
+compilateur
 *.o
