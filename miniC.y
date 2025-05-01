@@ -15,29 +15,27 @@ table_t *pile_talbles = NULL;
 nodePile pile_node = {NULL};  
 exprPile pile_expr = {NULL};
 
-	int n_erreur = 0;
-	int n_warning = 0;
-	int yylineno;
-	int n_param = 0;
-	int is_void = 0;
-	int is_int = 0;
-	int is_switch = 0;
-	int has_return = 0;
+int n_erreur = 0;
+int n_warning = 0;
+int yylineno;
+int n_param = 0;
+int is_void = 0;
+int is_int = 0;
+int is_switch = 0;
+int has_return = 0;
 
-    int nb_dim = 0;
-    int nb_aritee = 0;
+int nb_dim = 0;
+int nb_aritee = 0;
 
-    int warningError(char *s){
-		fprintf(stdout, "Warning : %s, dans la ligne %d: \n",s,yylineno);
-		n_warning++;
-	}
-	int yyerror(char *s){
-		fprintf(stderr,"\nError : %s, dans la ligne %d: \n",s ,yylineno);
-		n_erreur++;
-	}
+int warningError(char *s){
+    fprintf(stdout, "Warning : %s, dans la ligne %d: \n",s,yylineno);
+    n_warning++;
+}
 
-
-
+int yyerror(char *s){
+    fprintf(stderr,"\nError : %s, dans la ligne %d: \n",s ,yylineno);
+    n_erreur++;
+}
 
 %}
 
@@ -69,23 +67,27 @@ exprPile pile_expr = {NULL};
 
 %%
 push : 
-    {push_table();}
+    { push_table(); }
 ;
+
 pop :
-    {pop_table()}
+    { pop_table(); }
 ;
 
 programme:
         liste_declarations liste_fonctions
 ;
+
 liste_declarations:
         liste_declarations declaration 
     |
 ;
+
 liste_fonctions:
         liste_fonctions fonction
     |   fonction
 ;
+
 declaration:
         type liste_declarateurs ';' 
 ;
@@ -94,46 +96,44 @@ liste_declarateurs:
         liste_declarateurs ',' declarateur {
             declarer(strdup($3), nb_dim, tailles, INT_T, 0);  
         }
-    |   declarateur        { declarer(strdup($1), nb_dim, tailles, INT_T, 0);}
+    |   declarateur {
+            declarer(strdup($1), nb_dim, tailles, INT_T, 0);
+        }
 ;
 
 declarateur:
-    IDENTIFICATEUR {
-        if (rechercher_dans_pile($1)) {  
-            yyerror("La variable est déjà déclarée dans la même portée.");
-        } else {
-            nb_dim = 0;
-            tailles = NULL;
+        IDENTIFICATEUR {
+            if (rechercher_dans_pile($1)) {  
+                yyerror("La variable est déjà déclarée dans la même portée.");
+            } else {
+                nb_dim = 0;
+                tailles = NULL;
+                $$ = $1;  
+            }
+        }
+    |   declarateur '[' CONSTANTE ']' { 
+            nb_dim++;
+            tailles = realloc(tailles, nb_dim * sizeof(int));  
+            if (tailles == NULL) {
+                yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
+            }
+            tailles[nb_dim - 1] = $3;  
             $$ = $1;  
         }
-    }
-  | declarateur '[' CONSTANTE ']' { 
-        nb_dim++;
-        tailles = realloc(tailles, nb_dim * sizeof(int));  
-        if (tailles == NULL) {
-            yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
-        }
-        tailles[nb_dim - 1] = $3;  
-        $$ = $1;  
-    }
 ;
 
-
 fonction:
-        type IDENTIFICATEUR '('push liste_parms ')' '{' liste_declarations liste_instructions pop'}'
-        {
+        type IDENTIFICATEUR '(' push liste_parms ')' '{' liste_declarations liste_instructions pop'}' {
             if(is_void == 0 && has_return == 0){
                 warningError("Absence de return pour une fonction de type int");
-
+            } else if(is_int == 0 && has_return == 1){
+                warningError("Return present dans une fonction de type void");
             }
-            			else if(is_int == 0 && has_return == 1){
-				warningError("Return present dans une fonction de type void");
-
-			}
-			has_return = 0;
+            has_return = 0;
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
 ;
+
 type:
         VOID {
             is_void = 1;
@@ -141,28 +141,32 @@ type:
             $$ = VOID_T;
             
         }
-    |   INT{
+    |   INT {
             is_void = 0;
             is_int = 1;        
-
             $$ = INT_T;
-    }
+        }
 ;
+
 liste_parms:
         l_parms
     |
 ;
+
 l_parms :
         l_parms ',' parm
     |   parm
 ;
+
 parm:
         INT IDENTIFICATEUR
 ;
+
 liste_instructions :
         liste_instructions instruction
     |
 ;
+
 instruction:
         iteration
     |   selection
@@ -171,10 +175,12 @@ instruction:
     |   bloc
     |   appel
 ;
+
 iteration:
         FOR '(' affectation ';' condition ';' affectation ')' instruction
     |   WHILE '(' condition ')' instruction
 ;
+
 selection:
         IF '(' condition ')' instruction %prec THEN 
     |   IF '(' condition ')' instruction ELSE instruction
@@ -182,33 +188,33 @@ selection:
     |   CASE CONSTANTE ':' instruction
     |   DEFAULT ':' instruction
 ;
+
 saut:
         BREAK ';'
     |   RETURN ';' {
-                has_return = 0;
-                char *parent = nodeName();
-                nodeEmpiler(&pile_node,parent,"RETURN",2,"");
-                $$ = parent;
-
-                }
+            has_return = 0;
+            char *parent = nodeName();
+            nodeEmpiler(&pile_node,parent,"RETURN",2,"");
+            $$ = parent;
+        }
     |   RETURN expression ';'
 ;
+
 affectation:
-    variable '=' expression {
-        char *nom = $1;  
-        int valeur = $3; 
-
-        symbole_t *s = rechercher_dans_pile(nom);
-
-        if (s) {
-            s->valeur = valeur;
-        } else {
-            yyerror("variable pas déclaré")
+        variable '=' expression {
+            char *nom = $1;  
+            int valeur = $3; 
+            symbole_t *s = rechercher_dans_pile(nom);
+            if (s) {
+                s->valeur = valeur;
+            } else {
+                yyerror("variable pas déclaré")
+            }
         }
-    }
 ;
+
 bloc:
-        '{'push liste_declarations liste_instructions pop'}'{
+        '{' push liste_declarations liste_instructions pop '}'{
             char *bloc = nodeName();
             exprLienEntreParentEtNom(&pileNode,&exprPileTab[exprInc--],bloc);
             nodeEmpiler(&pileNode,bloc,"BLOC",6,"");
@@ -216,13 +222,16 @@ bloc:
 
         }
 ;
+
 appel:
         IDENTIFICATEUR '(' liste_expressions ')' ';'
 ;
+
 variable:
         IDENTIFICATEUR
     |   variable '[' expression ']'
 ;
+
 expression:
         '(' expression ')'
     |   expression binary_op expression %prec OP
@@ -231,20 +240,24 @@ expression:
     |   variable
     |   IDENTIFICATEUR '(' liste_expressions ')'
 ;
+
 liste_expressions:
         l_expr
     |
 ;
+
 l_expr:
         l_expr ',' expression
     |   expression
 ;
+
 condition:
         NOT '(' condition ')'
     |   condition binary_rel condition %prec REL
     |   '(' condition ')'
     |   expression binary_comp expression
 ;
+
 binary_op:
         PLUS
     |   MOINS
@@ -255,10 +268,12 @@ binary_op:
     |   BAND
     |   BOR
 ;
+
 binary_rel:
         LAND
     |   LOR
 ;
+
 binary_comp:
         LT
     |   GT
