@@ -5,23 +5,24 @@ typedef enum {INT_T, VOID_T} type_t;
 
 typedef struct _symbole_t {
     char *nom;
-    int aritee;
-    int nbDimensions;
-    int *tailles;
-    int is_function;
+    int valeur;
+    int nbDimensionsTab;
+    int *taillesTab;
+    int estFonction;
+    int nbParametresF;
     type_t type;
     struct _symbole_t *suivant;
 } symbole_t;
 
 typedef struct _table_t {
-    symbole_t *symboles;
+    symbole_t *symbole;
     struct _table_t *suivant;
 } table_t;
 
 /* Fonctions pour la gestion des tables/symboles */
 
-symbole_t* ajouter(table_t *table, char *nom, int aritee, int nbDimensions, int *tailles, type_t type, int is_function);
-void declarer(char *nom, int aritee, int nbDimensions,int *tailles, type_t type,int is_function);
+symbole_t* ajouter(table_t *table, char *nom, int nbParametresF, int nbDimensionsTab, int *taillesTab, type_t type, int estFonction);
+void declarer(char *nom, int nbParametresF, int nbDimensionsTab,int *taillesTab, type_t type,int estFonction);
 void verifier_declaration(char *nom);
 void verifier_dimensions(char *nom, int nbDemandees);
 void verifier_tailles(char *nom, int nbDemandees, int *taillesDemandees);

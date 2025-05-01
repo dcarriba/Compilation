@@ -2,8 +2,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "utils/tables_symboles.h"
-#include "utils/abresPile.h"
+#include "utils/arbresPile.h"
 #include "utils/arbres.h"
 
 extern FILE *yyin;
@@ -12,12 +13,11 @@ int yylex();
 int yyerror();
 
 table_t *pile_talbles = NULL;
-nodePile pile_node = {NULL};  
-exprPile pile_expr = {NULL};
+nodePile pileNode = {NULL};  
+exprPile pileExpr = {NULL};
 
 int n_erreur = 0;
 int n_warning = 0;
-int yylineno;
 int n_param = 0;
 int is_void = 0;
 int is_int = 0;
@@ -25,16 +25,18 @@ int is_switch = 0;
 int has_return = 0;
 
 int nb_dim = 0;
+int *tailles;
 int nb_aritee = 0;
 
 int warningError(char *s){
-    fprintf(stdout, "Warning : %s, dans la ligne %d: \n",s,yylineno);
+    fprintf(stdout, "[Warning] %s à la ligne %d: \n",s,yylineno);
     n_warning++;
 }
 
 int yyerror(char *s){
-    fprintf(stderr,"\nError : %s, dans la ligne %d: \n",s ,yylineno);
+    fprintf(stderr, "[ERREUR] %s à la ligne %d\n", s, yylineno);
     n_erreur++;
+    exit(1);
 }
 
 %}
@@ -43,10 +45,14 @@ int yyerror(char *s){
     char *name;
     type_t type;
     int value;
+    symbole_t *symbole;
 }
 
-%type <type> type declarateur
-%type <name> saut bloc
+%type<type> type
+%type<name> saut bloc
+
+%type<symbole> variable expression declarateur
+
 %token<name> IDENTIFICATEUR
 %token<value> CONSTANTE
 %token<type> VOID INT
@@ -94,10 +100,10 @@ declaration:
 
 liste_declarateurs:
         liste_declarateurs ',' declarateur {
-            declarer(strdup($3), nb_dim, tailles, INT_T, 0);  
+            // declarer(strdup($3), nb_dim, tailles, INT_T, 0);  
         }
     |   declarateur {
-            declarer(strdup($1), nb_dim, tailles, INT_T, 0);
+            // declarer(strdup($1), nb_dim, tailles, INT_T, 0);
         }
 ;
 
@@ -107,8 +113,8 @@ declarateur:
                 yyerror("La variable est déjà déclarée dans la même portée.");
             } else {
                 nb_dim = 0;
-                tailles = NULL;
-                $$ = $1;  
+                int *tailles = NULL;
+                $$->nom = $1;  
             }
         }
     |   declarateur '[' CONSTANTE ']' { 
@@ -194,7 +200,7 @@ saut:
     |   RETURN ';' {
             has_return = 0;
             char *parent = nodeName();
-            nodeEmpiler(&pile_node,parent,"RETURN",2,"");
+            nodeEmpiler(&pileNode, parent, "RETURN", 2, "");
             $$ = parent;
         }
     |   RETURN expression ';'
@@ -202,13 +208,13 @@ saut:
 
 affectation:
         variable '=' expression {
-            char *nom = $1;  
-            int valeur = $3; 
+            char *nom = $1->nom;  
+            int valeur = $3->valeur; 
             symbole_t *s = rechercher_dans_pile(nom);
             if (s) {
                 s->valeur = valeur;
             } else {
-                yyerror("variable pas déclaré")
+                yyerror("variable pas déclaré");
             }
         }
 ;
@@ -216,7 +222,7 @@ affectation:
 bloc:
         '{' push liste_declarations liste_instructions pop '}'{
             char *bloc = nodeName();
-            exprLienEntreParentEtNom(&pileNode,&exprPileTab[exprInc--],bloc);
+            // exprLienEntreParentEtNom(&pileNode,&exprPile[exprInc--],bloc);
             nodeEmpiler(&pileNode,bloc,"BLOC",6,"");
             $$ = bloc;
 
@@ -228,17 +234,34 @@ appel:
 ;
 
 variable:
-        IDENTIFICATEUR
-    |   variable '[' expression ']'
+        IDENTIFICATEUR {
+            $$->nom = $1;
+        }
+    |   variable '[' expression ']' {
+            $$ = $1;
+        }
 ;
 
 expression:
-        '(' expression ')'
+        '(' expression ')' {
+            $$ = $2;
+        }
     |   expression binary_op expression %prec OP
-    |   MOINS expression
-    |   CONSTANTE
-    |   variable
-    |   IDENTIFICATEUR '(' liste_expressions ')'
+    |   MOINS expression {
+            symbole_t *s;
+            s = $2;
+            s->valeur = (-($2->valeur));
+        }
+    |   CONSTANTE {
+            $$->valeur = $1;
+        }
+    |   variable {
+            $$ = $1;
+        }
+    |   IDENTIFICATEUR '(' liste_expressions ')' {
+            symbole_t *s = rechercher(top_table(), $1);
+            $$ = s;
+        }
 ;
 
 liste_expressions:
@@ -284,11 +307,6 @@ binary_comp:
 ;
 
 %%
-
-int yyerror(char *s){
-    fprintf(stderr, "[ERREUR] %s à la ligne %d\n", s, yylineno);
-    exit(1);
-}
 
 void finProgramme(){
     liberer_pile();

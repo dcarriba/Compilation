@@ -57,7 +57,7 @@ run: $(EXECUTABLE)
 	@echo "Compilation réussie!\n"
 
 	@echo "Analyse de exempleminiC.c :"
-	@./$(EXECUTABLE) < "exempleminiC.c" || continue
+	@./$(EXECUTABLE) < "exempleminiC.c" 2>&1 || echo "Error $$?" >&2;
 	@echo "";
 
 	@if [ ! -d "Tests" ]; then \
@@ -68,7 +68,7 @@ run: $(EXECUTABLE)
 	@echo "Analyse des fichiers .c dans le dossier \"Tests\"...\n"
 	@for file in Tests/*.c; do \
 		echo "Analyse de $$file :"; \
-		./$(EXECUTABLE) < $$file || continue; \
+		./$(EXECUTABLE) < $$file 2>&1 || echo "Error $$?" >&2; \
 		echo ""; \
 	done
 
