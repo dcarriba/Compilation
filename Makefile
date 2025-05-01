@@ -6,7 +6,10 @@ YACC = miniC.y
 
 LEX_OUTPUT = lex.yy.c
 YACC_OUTPUT = y.tab.c
-YACC_HEADER = y.tab.h
+YACC_HEADER = $(YACC_OUTPUT:.c=.h)
+
+LEX_OBJECT = $(LEX_OUTPUT:.c=.o)
+YACC_OBJECT = $(YACC_OUTPUT:.c=.o)
 
 # On récupère tous les fichiers utils/*.c
 SRCS = $(wildcard utils/*.c)
@@ -20,17 +23,17 @@ OBJECTS = $(SRCS:.c=.o)
 all: $(EXECUTABLE)
 
 # Pour compiler l'exécutable
-$(EXECUTABLE): lex.yy.o y.tab.o $(OBJECTS)
-	$(CC) $(OPTIONS) $(OBJECTS) lex.yy.o y.tab.o -o $(EXECUTABLE)
-	rm -f $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) lex.yy.o y.tab.o $(OBJECTS)
+$(EXECUTABLE): $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
+	$(CC) $(OPTIONS) $(OBJECTS) $(LEX_OBJECT) $(YACC_OBJECT) -o $(EXECUTABLE)
+	rm -f $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
 
 # Pour générer le fichier objet de lex.yy.c
-lex.yy.o: $(LEX_OUTPUT)
-	$(CC) $(OPTIONS) -c $(LEX_OUTPUT) -o lex.yy.o
+$(LEX_OBJECT): $(LEX_OUTPUT)
+	$(CC) $(OPTIONS) -c $(LEX_OUTPUT) -o $(LEX_OBJECT)
 
 # Pour générer le fichier objet de y.tab.c
-y.tab.o: $(YACC_OUTPUT)
-	$(CC) $(OPTIONS) -c $(YACC_OUTPUT) -o y.tab.o
+$(YACC_OBJECT): $(YACC_OUTPUT)
+	$(CC) $(OPTIONS) -c $(YACC_OUTPUT) -o $(YACC_OBJECT)
 
 # Pour compiler et générer les fichiers objets de tous les fichers utils/*.c
 $(OBJECTS): utils/%.o: utils/%.c
@@ -71,4 +74,4 @@ run: $(EXECUTABLE)
 
 # Règle pour supprimer l'exécutable et tous les fichiers intermédiaires
 clean:
-	rm -f $(EXECUTABLE) $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) lex.yy.o y.tab.o $(OBJECTS)
+	rm -f $(EXECUTABLE) $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
