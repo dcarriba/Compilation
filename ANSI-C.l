@@ -28,24 +28,22 @@ int yyerror(char *s);
 "for"                       { return FOR; }
 "if"                        { return IF; }
 "int"                       { 
-                                yylval.type = INT_T;
                                 return INT;
                             }
 "return"                    { return RETURN; }
 "switch"                    { return SWITCH; }
 "void"                      {
-                                yylval.type = VOID_T;
                                 return VOID;
                             }
 "while"                     { return WHILE; }
 
 {L}({L}|{D})*               {
-                                yylval.name = strdup(yytext);
+                                yylval.var = strdup(yytext);
                                 return IDENTIFICATEUR;
                             }
 
 {D}+                        {
-                                yylval.value = atoi(yytext);
+                                yylval.var = strdup(yytext);
                                 return CONSTANTE; 
                             }
 

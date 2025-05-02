@@ -111,6 +111,16 @@ void verifier_tailles(char *nom, int nbDemandees, int *taillesDemandees) {
         }
     }
 }
+void modifier_dimensions(char *nom,int newNbDimensionsTab){
+    symbole_t *s = rechercher_dans_pile(nom);
+    s->nbDimensionsTab = newNbDimensionsTab;
+
+}
+void modifier_tailles(char *nom, int *newTailles){
+    symbole_t *s = rechercher_dans_pile(nom);
+    s->taillesTab = newTailles;
+}
+ 
 
 /*
  * Rechercher un symbole dans la table

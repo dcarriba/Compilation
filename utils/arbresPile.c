@@ -134,8 +134,6 @@ void exprLienEntreParentEtNom(nodePile *pile, exprPile *pile2, const char *paren
 
     while (pile2->premier) {
         Expr e = exprDepiler(pile2);
-        /* mettreLienEntreParentEtNom(pile, e.nom, parent); */
-        /* ci dessus ne marche pas, peut tu voulais faire comme ci dessous*/
         lienEntreParentEtNom(pile, e.nom, parent);
         free(e.nom);
     }

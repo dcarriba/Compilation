@@ -24,6 +24,7 @@ typedef struct Expr {
 
 typedef struct {
     Expr *premier;
+    Expr *parent;
 } exprPile;
 
 

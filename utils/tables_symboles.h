@@ -26,6 +26,10 @@ void declarer(char *nom, int nbParametresF, int nbDimensionsTab,int *taillesTab,
 void verifier_declaration(char *nom);
 void verifier_dimensions(char *nom, int nbDemandees);
 void verifier_tailles(char *nom, int nbDemandees, int *taillesDemandees);
+
+void modifier_dimensions(char *nom,int nbDimensionsTab);
+void modifier_tailles(char *nom, int *newTailles);
+
 symbole_t* rechercher(table_t *table, char *nom);
 void supprimer(table_t *table, char *nom);
 int taille_type(type_t type);

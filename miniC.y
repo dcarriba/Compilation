@@ -42,20 +42,17 @@ int yyerror(char *s){
 %}
 
 %union {
-    char *name;
-    type_t type;
-    int value;
-    symbole_t *symbole;
+    char *var;
 }
 
-%type<type> type
-%type<name> saut bloc
+%type<var> type
+%type<var> saut bloc
 
-%type<symbole> variable expression declarateur
+%type<var> variable expression declarateur
 
-%token<name> IDENTIFICATEUR
-%token<value> CONSTANTE
-%token<type> VOID INT
+%token<var> IDENTIFICATEUR
+%token<var> CONSTANTE
+%token<var> VOID INT
 %token FOR WHILE IF ELSE SWITCH CASE DEFAULT
 %token BREAK RETURN PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
 %token GEQ LEQ EQ NEQ NOT EXTERN
@@ -100,10 +97,10 @@ declaration:
 
 liste_declarateurs:
         liste_declarateurs ',' declarateur {
-            // declarer(strdup($3), nb_dim, tailles, INT_T, 0);  
+            declarer(strdup($3), 0,nb_dim, tailles, INT_T, 0);  
         }
     |   declarateur {
-            // declarer(strdup($1), nb_dim, tailles, INT_T, 0);
+            declarer(strdup($1), 0,nb_dim, tailles, INT_T, 0);
         }
 ;
 
@@ -114,7 +111,7 @@ declarateur:
             } else {
                 nb_dim = 0;
                 int *tailles = NULL;
-                $$->nom = $1;  
+                $$ = $1;  
             }
         }
     |   declarateur '[' CONSTANTE ']' { 
@@ -144,13 +141,13 @@ type:
         VOID {
             is_void = 1;
             is_int = 0; 
-            $$ = VOID_T;
+            $$ = "void";
             
         }
     |   INT {
             is_void = 0;
             is_int = 1;        
-            $$ = INT_T;
+            $$ = "int";
         }
 ;
 
@@ -196,7 +193,11 @@ selection:
 ;
 
 saut:
-        BREAK ';'
+        BREAK ';' {
+            char *nom = nodeName();
+            nodeEmpiler(&pileNode,nom,"BREAK",4,"");
+            $$ = nom;
+        }
     |   RETURN ';' {
             has_return = 0;
             char *parent = nodeName();
@@ -208,14 +209,10 @@ saut:
 
 affectation:
         variable '=' expression {
-            char *nom = $1->nom;  
-            int valeur = $3->valeur; 
-            symbole_t *s = rechercher_dans_pile(nom);
-            if (s) {
-                s->valeur = valeur;
-            } else {
-                yyerror("variable pas déclaré");
-            }
+            char *parent = nodeName();
+            lienEntreParentEtNom(&pileNode,$1,parent);
+            lienEntreParentEtNom(&pileNode,$3,parent);
+            nodeEmpiler(&pileNode,parent,":=",6,"");
         }
 ;
 
@@ -235,10 +232,14 @@ appel:
 
 variable:
         IDENTIFICATEUR {
-            $$->nom = $1;
+            verifier_declaration($1);
+            char *nom = nodeName();
+            nodeEmpiler(&pileNode,nom,$1,6,"");
+            char *n = $1;
+            $$ = nom;
         }
     |   variable '[' expression ']' {
-            $$ = $1;
+            /*$$ = $1;*/
         }
 ;
 
@@ -248,12 +249,17 @@ expression:
         }
     |   expression binary_op expression %prec OP
     |   MOINS expression {
-            symbole_t *s;
-            s = $2;
-            s->valeur = (-($2->valeur));
-            $$ = s;
+            char *parent = nodeName();
+            lienEntreParentEtNom(&pileNode,$2,parent);
+            nodeEmpiler(&pileNode,parent,"- unaire",6,"");
+            $$ = parent;
         }
     |   CONSTANTE {
+            char *nom = nodeName();
+            nodeEmpiler(&pileNode,nom,$1,6,"");
+            $$ = nom;
+
+            
 
         }
     |   variable {
@@ -261,7 +267,7 @@ expression:
         }
     |   IDENTIFICATEUR '(' liste_expressions ')' {
             symbole_t *s = rechercher(top_table(), $1);
-            $$ = s;
+ 
         }
 ;
 
