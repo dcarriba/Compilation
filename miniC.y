@@ -78,7 +78,7 @@ pop :
 ;
 
 programme:
-        liste_declarations liste_fonctions
+        push liste_declarations liste_fonctions pop
 ;
 
 liste_declarations:
