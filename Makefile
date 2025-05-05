@@ -14,8 +14,8 @@ YACC_HEADER = $(YACC_OUTPUT:.c=.h)
 LEX_OBJECT = $(LEX_OUTPUT:.c=.o)
 YACC_OBJECT = $(YACC_OUTPUT:.c=.o)
 
-# On récupère tous les fichiers utils/*.c
-SRCS = $(wildcard utils/*.c)
+# On récupère tous les fichiers utils/*.c et utils/**/*.c
+SRCS = $(wildcard utils/*.c) $(wildcard utils/**/*.c)
 
 # Pour générer les fichiers objets de ces fichiers
 OBJECTS = $(SRCS:.c=.o)

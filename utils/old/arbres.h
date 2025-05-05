@@ -1,5 +1,5 @@
-#ifndef ARBRE_H
-#define ARBRE_H
+#ifndef ARBRES_H
+#define ARBRES_H
 
 extern int numNode;
 char *concat(int nbArgs, ...);

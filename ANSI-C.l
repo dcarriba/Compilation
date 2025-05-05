@@ -8,6 +8,10 @@ L                       [a-zA-Z_]
 
 #include <stdio.h>
 #include "utils/tables_symboles.h"
+#include "utils/old/arbresPile.h"
+#include "utils/old/arbres.h"
+#include "utils/noeud.h"
+#include "utils/arbre.h"
 #include "y.tab.h"
 
 extern YYSTYPE yylval;
@@ -27,14 +31,10 @@ int yyerror(char *s);
 "extern"                    { return EXTERN; }
 "for"                       { return FOR; }
 "if"                        { return IF; }
-"int"                       { 
-                                return INT;
-                            }
+"int"                       { return INT; }
 "return"                    { return RETURN; }
 "switch"                    { return SWITCH; }
-"void"                      {
-                                return VOID;
-                            }
+"void"                      { return VOID; }
 "while"                     { return WHILE; }
 
 {L}({L}|{D})*               {
@@ -44,6 +44,7 @@ int yyerror(char *s);
 
 {D}+                        {
                                 yylval.var = strdup(yytext);
+                                /* remplacer par: yylval.ival = atoi(yytext); */
                                 return CONSTANTE; 
                             }
 
@@ -79,14 +80,8 @@ int yyerror(char *s);
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* Ignorer les commentaires */ }
 
 .                           {
- 
-
                                 fprintf (stderr, "\033[1;31m[Error] lexical error %s à la ligne %d\033[0m\n", yytext, yylineno);
- 
-
                                 exit(1); 
- 
-
                             }
  
 %%

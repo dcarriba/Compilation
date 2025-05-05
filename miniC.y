@@ -4,8 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils/tables_symboles.h"
-#include "utils/arbresPile.h"
-#include "utils/arbres.h"
+#include "utils/old/arbresPile.h"
+#include "utils/old/arbres.h"
+#include "utils/noeud.h"
+#include "utils/arbre.h"
 
 #define COLOR_RESET       "\033[0m"
 #define COLOR_RED         "\033[1;31m"
@@ -21,6 +23,7 @@ extern FILE *yyin;
 extern int yylineno;
 int yylex();
 int yyerror();
+int yylex_destroy();
 
 table_t *pile_talbles = NULL;
 table_t *pile_tablesFonc = NULL;
@@ -57,9 +60,12 @@ int yyerror(char *s){
 %}
 
 %union {
+    int ival;
     char *var;
+    node noeud;
 }
 
+%type<noeud> programme
 %type<var> liste_declarations declaration liste_fonctions fonction type
 %type<var> saut bloc liste_declarateurs
 
@@ -94,63 +100,84 @@ pop :
 
 programme:
         push liste_declarations liste_fonctions pop
+        {
+            
+        }
 ;
 
 liste_declarations:
-        liste_declarations declaration {
+        liste_declarations declaration
+        {
             $$=concat(2,$1,$2);
         }
-    | {push_table();
-        $$ = "";
-        exprPile ePile = {NULL};
-        pileExprTab[++exprInc]= ePile;}
+    |   
+        {
+            push_table();
+            $$ = "";
+            exprPile ePile = {NULL};
+            pileExprTab[++exprInc]= ePile;
+        }
 ;
 
 liste_fonctions:
-        liste_fonctions fonction {$$ = concat(2,$1,$2);}
+        liste_fonctions fonction
+        {
+            $$ = concat(2,$1,$2);
+        }
     |   fonction
+        {
+            $$ = $1;
+        }
 ;
 
 declaration:
-        type liste_declarateurs ';'  {
+        type liste_declarateurs ';'  
+        {
             if (is_void == 1){
                 yyerror("Déclaration de type void impossible");
             }
-            $$ = concat(4,$1," ",$2, ";\n");
+            $$ = concat(4, $1, " ", $2, ";\n");
         }
 ;
 
 liste_declarateurs:
-        liste_declarateurs ',' declarateur {
-            $$ = concat(3,$1,",",$3);
+        liste_declarateurs ',' declarateur 
+        {
+            $$ = concat(3, $1, ",", $3);
         }
-    |   declarateur {
-            $$=$1;
+    |   declarateur 
+        {
+            $$ = $1;
         }
 ;
 
 declarateur:
-        IDENTIFICATEUR { declarer($1, 0,nb_dim, tailles, INT_T, 0);
-        $$ = $1;
+        IDENTIFICATEUR
+        { 
+            declarer($1, 0, nb_dim, tailles, INT_T, 0);
+            $$ = $1;
         }
-    |   declarateur '[' CONSTANTE ']' { 
+    |   declarateur '[' CONSTANTE ']' 
+        { 
             nb_dim++;
             tailles = realloc(tailles, nb_dim * sizeof(int));  
             if (tailles == NULL) {
                 yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
             }
-            tailles[nb_dim - 1] = (int) $3;   
-            $$ = concat(4,$1,"[",$3,"]");  
+            tailles[nb_dim - 1] = $3;   
+            $$ = concat(4, $1, "[", $3, "]");  
         }
-    | {nb_dim =0;
-        $$ = "";}
+    |   
+        {
+            nb_dim = 0;
+            $$ = "";
+        }
 ;
 
 fonction:
-        type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' {
-            pop_table();
-
-            $$=$2;
+        type IDENTIFICATEUR '(' push liste_parms ')' '{' liste_declarations liste_instructions pop'}' 
+        {
+            $$ = $2;
             int i = 0;
             while(i < incAppel){
                 symbole_t sym = listeAppelFonctions[i];
@@ -162,7 +189,6 @@ fonction:
                 }
                 i++;
             }
-            push_table();
             n_param = 0;
             incAppel = 0;
             if(is_void == 0 && has_return == 0){
@@ -178,21 +204,23 @@ fonction:
             nodeEmpiler(&pileNode,bloc,"BLOC",6,fonc);
             nodeEmpiler(&pileNode,fonc,fonctionLabel,1,"");
             $$ = fonc ;
-
         }
-    |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'{
-        $$ = "";
-    }
+    |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
+        {
+            $$ = "";
+        }
 ;
 
 type:
-        VOID {
+        VOID 
+        {
             is_void = 1;
             is_int = 0; 
             $$ = "void";
             
         }
-    |   INT {
+    |   INT 
+        {
             is_void = 0;
             is_int = 1;        
             $$ = "int";
@@ -265,7 +293,8 @@ saut:
 ;
 
 affectation:
-        variable '=' expression {
+        variable '=' expression 
+        {
             char *parent = nodeName();
             lienEntreParentEtNom(&pileNode,$1,parent);
             lienEntreParentEtNom(&pileNode,$3,parent);
@@ -374,6 +403,7 @@ binary_comp:
 
 void finProgramme(){
     liberer_pile();
+    yylex_destroy();
 }
 
 int main(int argc, char* argv[]){
@@ -398,6 +428,6 @@ int main(int argc, char* argv[]){
         return 3;
     }
     yyparse();
-    printf(COLOR_GREEN "Analyse syntaxique valide!\n" COLOR_RESET);
+    printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! - Construction de l'arbre syntaxique sans erreurs\n" COLOR_RESET);
     return 0;
 }
