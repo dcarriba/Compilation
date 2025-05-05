@@ -7,6 +7,16 @@
 #include "utils/arbresPile.h"
 #include "utils/arbres.h"
 
+#define COLOR_RESET       "\033[0m"
+#define COLOR_RED         "\033[1;31m"
+#define COLOR_GREEN       "\033[1;32m"
+#define COLOR_YELLOW      "\033[1;33m"
+#define COLOR_BLUE        "\033[1;34m"
+#define COLOR_MAGENTA     "\033[1;35m"
+#define COLOR_CYAN        "\033[1;36m"
+ 
+
+
 extern FILE *yyin;
 extern int yylineno;
 int yylex();
@@ -34,12 +44,12 @@ int *tailles;
 int nb_aritee = 0;
 
 void warningError(char *s){
-    fprintf(stdout, "[Warning] %s à la ligne %d: \n",s,yylineno);
+    fprintf(stdout, COLOR_MAGENTA "[Warning] %s à la ligne %d: \n" COLOR_RESET, s, yylineno);
     n_warning++;
 }
 
 int yyerror(char *s){
-    fprintf(stderr, "[ERREUR] %s à la ligne %d\n", s, yylineno);
+    fprintf(stderr, COLOR_RED "[Error] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
     n_erreur++;
     exit(1);
 }
@@ -368,7 +378,7 @@ void finProgramme(){
 
 int main(int argc, char* argv[]){
     if (atexit(finProgramme) != 0){
-        fprintf(stderr, "[ERREUR] Erreur de l'enregistrement de la fonction finProgramme() avec atexit()\n");
+        fprintf(stderr, COLOR_RED "[Error] Erreur de l'enregistrement de la fonction finProgramme() avec atexit()\n" COLOR_RESET);
         return 4;
     }
     FILE* fichier;
@@ -379,15 +389,15 @@ int main(int argc, char* argv[]){
         nom_fichier = argv[1];
         /* si fichier existe pas alors erreur */
         if ((fichier = fopen(nom_fichier,"r")) == NULL){ 
-            fprintf(stderr, "[ERREUR] Erreur de lecture du ficher : %s\n", nom_fichier);
+            fprintf(stderr, COLOR_RED "[Error] Erreur de lecture du ficher : %s\n" COLOR_RESET, nom_fichier);
             return 2;
         }
         yyin = fichier;
     } else {
-        fprintf(stderr, "[ERREUR] Veuillez ne pas donner plus d'un fichier en argument.\n");
+        fprintf(stderr, COLOR_RED "[Error] Veuillez ne pas donner plus d'un fichier en argument.\n" COLOR_RESET);
         return 3;
     }
     yyparse();
-    printf("Analyse syntaxique valide!\n");
+    printf(COLOR_GREEN "Analyse syntaxique valide!\n" COLOR_RESET);
     return 0;
 }

@@ -20,6 +20,13 @@ SRCS = $(wildcard utils/*.c)
 # Pour générer les fichiers objets de ces fichiers
 OBJECTS = $(SRCS:.c=.o)
 
+# Pour afficher sur le shell en couleur
+RED     := \033[1;31m
+GREEN   := \033[1;32m
+YELLOW  := \033[1;33m
+CYAN    := \033[1;36m
+RESET   := \033[0m
+
 .PHONY: all clean run
 
 # Règle pour compiler
@@ -53,25 +60,25 @@ $(YACC_OUTPUT) $(YACC_HEADER): $(YACC_INPUT)
 # Règle qui compile et qui teste l'exécutable sur exempleminiC.c et tous les fichiers Tests/*.c
 run: $(EXECUTABLE)
 	@if [ ! -f $(EXECUTABLE) ]; then \
-		echo "[ERREUR] compilation échouée."; \
+		echo "$(RED)[Error] Compilation échouée.$(RESET)"; \
 		exit 1; \
 	fi
 
-	@echo "Compilation réussie!\n"
+	@echo "$(GREEN)Compilation réussie!$(RESET)\n"
 
 	@echo "Analyse de exempleminiC.c :"
-	@./$(EXECUTABLE) exempleminiC.c 2>&1 || echo "Error $$?" >&2;
+	@./$(EXECUTABLE) exempleminiC.c || echo "$(RED)Error $$?$(RESET)" >&2;
 	@echo "";
 
 	@if [ ! -d "Tests" ]; then \
-		echo "Erreur: Le dossier 'Tests' n'existe pas."; \
+		echo "$(RED)[Error] Le dossier 'Tests' n'existe pas.$(RESET)"; \
 		exit 1; \
 	fi
 
 	@echo "Analyse des fichiers .c dans le dossier \"Tests\"...\n"
 	@for file in Tests/*.c; do \
 		echo "Analyse de $$file :"; \
-		./$(EXECUTABLE) $$file 2>&1 || echo "Error $$?" >&2; \
+		./$(EXECUTABLE) $$file || echo "$(RED)Error $$?$(RESET)" >&2; \
 		echo ""; \
 	done
 
