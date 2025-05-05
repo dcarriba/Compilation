@@ -276,7 +276,7 @@ affectation:
 bloc:
         '{' push liste_declarations liste_instructions pop '}'{
             char *bloc = nodeName();
-            // exprLienEntreParentEtNom(&pileNode,&exprPile[exprInc--],bloc);
+            exprLienEntreParentEtNom(&pileNode,&pileExprTab[exprInc--],bloc);
             nodeEmpiler(&pileNode,bloc,"BLOC",6,"");
             $$ = bloc;
 
