@@ -6,6 +6,8 @@
 static table_t *pile = NULL; /* pile */
 static int pos = 0;
 
+symbole_t listeAppelFonctions[100];
+int incAppel = 0;
 /* 
  * Ajout d'une table de symbole 
  */

@@ -13,8 +13,12 @@ int yylex();
 int yyerror();
 
 table_t *pile_talbles = NULL;
+table_t *pile_tablesFonc = NULL;
 nodePile pileNode = {NULL};  
 exprPile pileExpr = {NULL};
+exprPile pileExprTab[100];
+int exprInc = 0;
+
 
 int n_erreur = 0;
 int n_warning = 0;
@@ -23,6 +27,7 @@ int is_void = 0;
 int is_int = 0;
 int is_switch = 0;
 int has_return = 0;
+
 
 int nb_dim = 0;
 int *tailles;
@@ -45,10 +50,10 @@ int yyerror(char *s){
     char *var;
 }
 
-%type<var> type
-%type<var> saut bloc
+%type<var> liste_declarations declaration liste_fonctions fonction type
+%type<var> saut bloc liste_declarateurs
 
-%type<var> variable expression declarateur
+%type<var> variable expression declarateur 
 
 %token<var> IDENTIFICATEUR
 %token<var> CONSTANTE
@@ -82,37 +87,41 @@ programme:
 ;
 
 liste_declarations:
-        liste_declarations declaration 
-    |
+        liste_declarations declaration {
+            $$=concat(2,$1,$2);
+        }
+    | {push_table();
+        $$ = "";
+        exprPile ePile = {NULL};
+        pileExprTab[++exprInc]= ePile;}
 ;
 
 liste_fonctions:
-        liste_fonctions fonction
+        liste_fonctions fonction {$$ = concat(2,$1,$2);}
     |   fonction
 ;
 
 declaration:
-        type liste_declarateurs ';' 
+        type liste_declarateurs ';'  {
+            if (is_void == 1){
+                yyerror("Déclaration de type void impossible");
+            }
+            $$ = concat(4,$1," ",$2, ";\n");
+        }
 ;
 
 liste_declarateurs:
         liste_declarateurs ',' declarateur {
-            declarer(strdup($3), 0,nb_dim, tailles, INT_T, 0);  
+            $$ = concat(3,$1,",",$3);
         }
     |   declarateur {
-            declarer(strdup($1), 0,nb_dim, tailles, INT_T, 0);
+            $$=$1;
         }
 ;
 
 declarateur:
-        IDENTIFICATEUR {
-            if (rechercher_dans_pile($1)) {  
-                yyerror("La variable est déjà déclarée dans la même portée.");
-            } else {
-                nb_dim = 0;
-                int *tailles = NULL;
-                $$ = $1;  
-            }
+        IDENTIFICATEUR { declarer($1, 0,nb_dim, tailles, INT_T, 0);
+        $$ = $1;
         }
     |   declarateur '[' CONSTANTE ']' { 
             nb_dim++;
@@ -120,21 +129,50 @@ declarateur:
             if (tailles == NULL) {
                 yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
             }
-            tailles[nb_dim - 1] = $3;  
-            $$ = $1;  
+            tailles[nb_dim - 1] = (int) $3;   
+            $$ = concat(4,$1,"[",$3,"]");  
         }
+    | {nb_dim =0;
+        $$ = "";}
 ;
 
 fonction:
-        type IDENTIFICATEUR '(' push liste_parms ')' '{' liste_declarations liste_instructions pop'}' {
+        type IDENTIFICATEUR '(' liste_parms ')' '{' liste_declarations liste_instructions '}' {
+            pop_table();
+
+            $$=$2;
+            int i = 0;
+            while(i < incAppel){
+                symbole_t sym = listeAppelFonctions[i];
+                symbole_t *s =  rechercher_dans_pile(sym.nom);
+                verifier_declaration(sym.nom);
+                if(sym.nbParametresF != s->nbParametresF){
+                    yyerror("Nombre de paramètre");
+                    printf("La fonction %s doit avoir %d parametres, ici il y en a %d \n",sym.nom,s->nbParametresF,sym.nbParametresF);
+                }
+                i++;
+            }
+            push_table();
+            n_param = 0;
+            incAppel = 0;
             if(is_void == 0 && has_return == 0){
                 warningError("Absence de return pour une fonction de type int");
             } else if(is_int == 0 && has_return == 1){
                 warningError("Return present dans une fonction de type void");
             }
             has_return = 0;
+            char *bloc = nodeName();
+            char *fonc = $2;
+            char *fonctionLabel = concat(3,$2,",",$1);
+            exprLienEntreParentEtNom(&pileNode,&pileExprTab[exprInc--] , bloc);
+            nodeEmpiler(&pileNode,bloc,"BLOC",6,fonc);
+            nodeEmpiler(&pileNode,fonc,fonctionLabel,1,"");
+            $$ = fonc ;
+
         }
-    |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
+    |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'{
+        $$ = "";
+    }
 ;
 
 type:
@@ -204,7 +242,16 @@ saut:
             nodeEmpiler(&pileNode, parent, "RETURN", 2, "");
             $$ = parent;
         }
-    |   RETURN expression ';'
+    |   RETURN expression ';' {
+            has_return = 1;
+            if(is_void ==1){
+                warningError("Return sur une fonction de type void interdit");
+            }
+        char *parent = nodeName();
+        lienEntreParentEtNom(&pileNode,$2,parent);
+        nodeEmpiler(&pileNode,parent,"RETURN",2,"");
+        $$ =parent;
+    }
 ;
 
 affectation:

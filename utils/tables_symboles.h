@@ -1,6 +1,7 @@
 #ifndef TABLES_SYMBOLES_H
 #define TABLES_SYMBOLES_H
 
+
 typedef enum {INT_T, VOID_T} type_t;
 
 typedef struct _symbole_t {
@@ -19,6 +20,8 @@ typedef struct _table_t {
     struct _table_t *suivant;
 } table_t;
 
+extern int incAppel;
+extern symbole_t listeAppelFonctions[100];
 /* Fonctions pour la gestion des tables/symboles */
 
 symbole_t* ajouter(table_t *table, char *nom, int nbParametresF, int nbDimensionsTab, int *taillesTab, type_t type, int estFonction);
