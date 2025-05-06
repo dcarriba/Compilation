@@ -47,8 +47,19 @@ tree_list *add_tree_to_list(tree_list *tl, tree *t) {
         exit(EXIT_FAILURE);
     }
     new_tl->item = t;
-    new_tl->suivant = tl;
-    return new_tl;
+    new_tl->suivant = NULL;
+
+    if (tl == NULL) {
+        return new_tl;
+    }
+
+    tree_list *current = tl;
+    while (current->suivant != NULL) {
+        current = current->suivant;
+    }
+    current->suivant = new_tl;
+
+    return tl;
 }
 
 /* 

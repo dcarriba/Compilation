@@ -63,7 +63,7 @@ void destroy_node(node *n){
         if (n->shape) free(n->shape);
         if (n->color) free(n->color);
         if (n->style) free(n->style);
-        if (n->fils) detroy_node_list(n->fils);
+        if (n->fils) destroy_node_list(n->fils);
         free(n);
     }
 }
@@ -115,9 +115,33 @@ node_list *create_node_list(int nb_nodes, ...) {
 }
 
 /*
+ * Ajoute le noeud à la fin de la liste 
+ */
+node_list *add_node_to_list(node_list *nl, node *n) {
+    node_list *new_nl = (node_list *)malloc(sizeof(node_list));
+    if (!new_nl) {
+        fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour node_list dans add_node_to_list()\n" COLOR_RESET);
+        exit(EXIT_FAILURE);
+    }
+    new_nl->item = n;
+    new_nl->suivant = NULL;
+
+    if (nl == NULL) {
+        return new_nl;
+    }
+
+    node_list *current = nl;
+    while (current->suivant != NULL) {
+        current = current->suivant;
+    }
+    current->suivant = new_nl;
+    return nl;
+}
+
+/*
  * Détruit la liste des noeuds et libère l'espace mémoire
  */
-void detroy_node_list(node_list *nl){
+void destroy_node_list(node_list *nl){
     node_list *current = nl;
     while (current != NULL) {
         node_list *tmp = current;

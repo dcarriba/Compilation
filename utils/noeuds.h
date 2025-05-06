@@ -26,6 +26,7 @@ void destroy_node(node *n);
 
 node_list *new_empty_node_list();
 node_list *create_node_list(int nb_nodes, ...);
-void detroy_node_list(node_list *nl);
+node_list *add_node_to_list(node_list *nl, node *n);
+void destroy_node_list(node_list *nl);
 
 #endif

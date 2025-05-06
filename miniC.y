@@ -51,14 +51,24 @@ int yyerror(char *s){
 %union {
     int ival;
     char *var;
-    node noeud;
+    node *noeud;
+    node_list *liste_noeuds;
+    tree *arbre;
+    tree_list *liste_arbres;
 }
 
-%type<noeud> programme
-%type<var> liste_declarations declaration liste_fonctions fonction type
-%type<var> saut bloc liste_declarateurs
 
-%type<var> variable expression declarateur 
+%type<liste_arbres> programme liste_fonctions
+%type<arbre> fonction
+%type<liste_noeuds> liste_instructions
+%type<noeud> bloc affectation variable expression
+%type<var> type
+
+
+%type<var> liste_declarations declaration
+%type<var> saut liste_declarateurs
+
+%type<var> declarateur 
 
 %token<var> IDENTIFICATEUR
 %token<var> CONSTANTE
@@ -80,17 +90,21 @@ int yyerror(char *s){
 
 %%
 push : 
-    { push_table(); }
+        { 
+            push_table();
+        }
 ;
 
 pop :
-    { pop_table(); }
+        { 
+            pop_table(); 
+        }
 ;
 
 programme:
         push liste_declarations liste_fonctions pop
         {
-            
+            $$ = $3;
         }
 ;
 
@@ -111,11 +125,12 @@ liste_declarations:
 liste_fonctions:
         liste_fonctions fonction
         {
-            $$ = concat(2,$1,$2);
+            $$ = add_tree_to_list($1, $2);
         }
     |   fonction
         {
-            $$ = $1;
+            tree_list *tl = add_tree_to_list(new_empty_tree_list(), $1);
+            $$ = tl;
         }
 ;
 
@@ -166,6 +181,7 @@ declarateur:
 fonction:
         type IDENTIFICATEUR '(' push liste_parms ')' '{' liste_declarations liste_instructions pop'}' 
         {
+            /*
             $$ = $2;
             int i = 0;
             while(i < incAppel){
@@ -193,10 +209,21 @@ fonction:
             nodeEmpiler(&pileNode,bloc,"BLOC",6,fonc);
             nodeEmpiler(&pileNode,fonc,fonctionLabel,1,"");
             $$ = fonc ;
+            */
+
+
+            node_list *fils = create_node_list(1, create_node("BLOC", "ellipse", "black", "solid", NULL));
+            int len = strlen($1) + strlen(", ") + strlen($2) + 1;
+            char *label = (char *)malloc(len);
+            snprintf(label, len, "%s, %s", $1, $2);
+            node *n = create_node(label, "invtrapezium", "blue", "solid", fils);
+            free(label);
+            tree *t = create_tree(n);
+            $$ = t;
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
         {
-            $$ = "";
+
         }
 ;
 
@@ -284,20 +311,16 @@ saut:
 affectation:
         variable '=' expression 
         {
-            char *parent = nodeName();
-            lienEntreParentEtNom(&pileNode,$1,parent);
-            lienEntreParentEtNom(&pileNode,$3,parent);
-            nodeEmpiler(&pileNode,parent,":=",6,"");
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node(":=", "ellipse", "black", "solid", fils);
+            $$ = n;
         }
 ;
 
 bloc:
-        '{' push liste_declarations liste_instructions pop '}'{
-            char *bloc = nodeName();
-            exprLienEntreParentEtNom(&pileNode,&pileExprTab[exprInc--],bloc);
-            nodeEmpiler(&pileNode,bloc,"BLOC",6,"");
-            $$ = bloc;
-
+        '{' push liste_declarations liste_instructions pop '}'
+        {
+            $$ = create_node("BLOC", "ellipse", "black", "solid", $4);
         }
 ;
 
@@ -306,30 +329,39 @@ appel:
 ;
 
 variable:
-        IDENTIFICATEUR {
+        IDENTIFICATEUR
+        {
+            /*
             verifier_declaration($1);
             char *nom = nodeName();
             nodeEmpiler(&pileNode,nom,$1,6,"");
             char *n = $1;
             $$ = nom;
+            */
+
+            $$ = create_node($1, "ellipse", "black", "solid", NULL);
         }
-    |   variable '[' expression ']' {
-            /*$$ = $1;*/
+    |   variable '[' expression ']' 
+        {
+
         }
 ;
 
 expression:
-        '(' expression ')' {
+        '(' expression ')' 
+        {
             $$ = $2;
         }
     |   expression binary_op expression %prec OP
-    |   MOINS expression {
+    |   MOINS expression 
+        {
             char *parent = nodeName();
             lienEntreParentEtNom(&pileNode,$2,parent);
             nodeEmpiler(&pileNode,parent,"- unaire",6,"");
             $$ = parent;
         }
-    |   CONSTANTE {
+    |   CONSTANTE 
+        {
             char *nom = nodeName();
             nodeEmpiler(&pileNode,nom,$1,6,"");
             $$ = nom;
@@ -337,10 +369,12 @@ expression:
             
 
         }
-    |   variable {
+    |   variable 
+        {
             $$ = $1;
         }
-    |   IDENTIFICATEUR '(' liste_expressions ')' {
+    |   IDENTIFICATEUR '(' liste_expressions ')' 
+        {
             symbole_t *s = rechercher(top_table(), $1);
  
         }
