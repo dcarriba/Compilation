@@ -44,6 +44,18 @@ make run
 make clean
 ```
 
+### Compiler et exécuter avec `valgrind` sur tous les fichiers tests (exempleminiC.c et Tests/*.c)
+
+```bash
+make valgrind-run
+```
+
+Dépendance : `valgrind` est requis. Pour l'installer utiliser la commande suivante :
+
+```bash
+sudo apt-get install valgrind
+```
+
 ### Compiler pour pouvoir débugger avec gdb
 
 ```bash

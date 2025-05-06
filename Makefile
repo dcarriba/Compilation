@@ -14,6 +14,10 @@ YACC_HEADER = $(YACC_OUTPUT:.c=.h)
 LEX_OBJECT = $(LEX_OUTPUT:.c=.o)
 YACC_OBJECT = $(YACC_OUTPUT:.c=.o)
 
+# Pour la règle valgrind-run
+VALGRIND = valgrind
+VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all -s
+
 # On récupère tous les fichiers utils/*.c et utils/**/*.c
 SRCS = $(wildcard utils/*.c) $(wildcard utils/**/*.c)
 
@@ -79,6 +83,31 @@ run: $(EXECUTABLE)
 	@for file in Tests/*.c; do \
 		echo "Analyse de $$file :"; \
 		./$(EXECUTABLE) $$file || echo "$(RED)Error $$?$(RESET)" >&2; \
+		echo ""; \
+	done
+
+# Règle qui compile et qui teste l'exécutable avec valgrind sur exempleminiC.c et tous les fichiers Tests/*.c
+valgrind-run: $(EXECUTABLE)
+	@if [ ! -f $(EXECUTABLE) ]; then \
+		echo "$(RED)[Error] Compilation échouée.$(RESET)"; \
+		exit 1; \
+	fi
+
+	@echo "$(GREEN)Compilation réussie!$(RESET)\n"
+
+	@echo "Analyse de exempleminiC.c avec valgrind :"
+	@$(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) exempleminiC.c || echo "$(RED)Error $$?$(RESET)" >&2;
+	@echo "";
+
+	@if [ ! -d "Tests" ]; then \
+		echo "$(RED)[Error] Le dossier 'Tests' n'existe pas.$(RESET)"; \
+		exit 1; \
+	fi
+
+	@echo "Analyse des fichiers .c dans le dossier \"Tests\" avec valgrind...\n"
+	@for file in Tests/*.c; do \
+		echo "Analyse de $$file avec valgrind :"; \
+		$(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) $$file || echo "$(RED)Error $$?$(RESET)" >&2; \
 		echo ""; \
 	done
 
