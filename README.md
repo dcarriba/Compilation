@@ -56,16 +56,16 @@ Dépendance : `valgrind` est requis. Pour l'installer utiliser la commande suiva
 sudo apt-get install valgrind
 ```
 
-### Compiler pour pouvoir débugger avec gdb
+### Compiler pour pouvoir débugger avec `gdb`
 
 ```bash
 make gdb
 ```
 
-ensuite utiliser gdb :
+ensuite utiliser `gdb` :
 
 ```bash
 gdb compilateur
 ```
 
-Pour plus d'informations comment installer et utiliser la commande gdb [cliquez ici](https://www.gdbtutorial.com/) 
+Pour plus d'informations comment installer et utiliser la commande `gdb` [cliquez ici](https://www.gdbtutorial.com/) 
