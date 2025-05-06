@@ -3,7 +3,7 @@
 /*
  * Variable globale utilisé pour le nom unique (identifiant) des noeuds
  */
-int node_number = 0;
+static int node_number = 0;
 
 /*
  * Fonction sûre de strdup()
@@ -34,8 +34,8 @@ char *unique_node_name() {
         fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour char *name dans unique_node_name()\n" COLOR_RESET);
         exit(EXIT_FAILURE);
     }
-
-    snprintf(name, length, "node_%d", node_number_digits++);
+    
+    snprintf(name, length, "node_%d", node_number++);
     return name;
 }
 
@@ -149,4 +149,43 @@ void destroy_node_list(node_list *nl){
         current = tmp->suivant;
         free(tmp);
     }
+}
+
+/*
+ * Fonction utilisé par print_node pour afficher les fils et petits-fils récursivement
+ */
+void print_node_recursive(node *n, int indent_level) {
+    if (!n) return;
+
+    // Indentation visuelle
+    for (int i = 0; i < indent_level; i++) {
+        printf("  ");
+    }
+
+    // Affichage du noeud courant
+    printf(COLOR_YELLOW "Node Name: %s\n" COLOR_RESET, n->nom);
+    for (int i = 0; i < indent_level; i++) printf("  ");
+    printf("  Label : %s\n", n->label);
+    for (int i = 0; i < indent_level; i++) printf("  ");
+    printf("  Shape : %s\n", n->shape);
+    for (int i = 0; i < indent_level; i++) printf("  ");
+    printf("  Color : %s\n", n->color);
+    for (int i = 0; i < indent_level; i++) printf("  ");
+    printf("  Style : %s\n", n->style);
+
+    // Appel récursif sur les fils
+    if (n->fils) {
+        node_list *fils = n->fils;
+        while (fils) {
+            print_node_recursive(fils->item, indent_level + 1);
+            fils = fils->suivant;
+        }
+    }
+}
+
+/*
+ * Pour afficher un noeud ainsi que tout ses fils et petits-fils etc. dans le terminal
+ */
+void print_node(node *n) {
+    print_node_recursive(n, 0);
 }

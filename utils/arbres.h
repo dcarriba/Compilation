@@ -23,4 +23,6 @@ tree_list *new_empty_tree_list();
 tree_list *add_tree_to_list(tree_list *tl, tree *t);
 void destroy_tree_list(tree_list *tl);
 
+void print_tree_list(tree_list *tl);
+
 #endif 

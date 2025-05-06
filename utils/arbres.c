@@ -74,3 +74,28 @@ void destroy_tree_list(tree_list *tl) {
         free(tmp);
     }
 }
+
+/*
+ * Pour afficher une tree_list dans le terminal
+ */
+void print_tree_list(tree_list *tl) {
+    if (!tl) {
+        printf(COLOR_YELLOW "[Info] La liste des arbres est vide.\n" COLOR_RESET);
+        return;
+    }
+
+    int index = 1;
+    tree_list *current = tl;
+
+    while (current) {
+        printf(COLOR_CYAN "Arbre #%d\n" COLOR_RESET, index);
+        if (current->item && current->item->racine) {
+            print_node(current->item->racine);
+        } else {
+            printf("  (arbre vide ou racine NULL)\n");
+        }
+        printf("\n");
+        current = current->suivant;
+        index++;
+    }
+}

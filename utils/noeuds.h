@@ -29,4 +29,6 @@ node_list *create_node_list(int nb_nodes, ...);
 node_list *add_node_to_list(node_list *nl, node *n);
 void destroy_node_list(node_list *nl);
 
+void print_node(node *n);
+
 #endif

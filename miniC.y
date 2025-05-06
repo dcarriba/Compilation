@@ -16,6 +16,11 @@ int yylex();
 int yyerror();
 int yylex_destroy();
 
+/*
+ * Arbre Abstrait 
+ */
+tree_list *arbre_abstrait = NULL;
+
 table_t *pile_talbles = NULL;
 table_t *pile_tablesFonc = NULL;
 nodePile pileNode = {NULL};  
@@ -49,7 +54,6 @@ int yyerror(char *s){
 %}
 
 %union {
-    int ival;
     char *var;
     node *noeud;
     node_list *liste_noeuds;
@@ -60,22 +64,19 @@ int yyerror(char *s){
 
 %type<liste_arbres> programme liste_fonctions
 %type<arbre> fonction
-%type<liste_noeuds> liste_instructions
-%type<noeud> bloc affectation variable expression
-%type<var> type
+%type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms
+%type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm
+%type<var> type binary_op binary_rel binary_comp
 
-
-%type<var> liste_declarations declaration
-%type<var> saut liste_declarateurs
-
-%type<var> declarateur 
 
 %token<var> IDENTIFICATEUR
 %token<var> CONSTANTE
 %token<var> VOID INT
 %token FOR WHILE IF ELSE SWITCH CASE DEFAULT
-%token BREAK RETURN PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
-%token GEQ LEQ EQ NEQ NOT EXTERN
+%token BREAK RETURN
+%token<var> PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
+%token<var> GEQ LEQ EQ NEQ 
+%token NOT EXTERN
 
 %left PLUS MOINS
 %left MUL DIV
@@ -104,6 +105,7 @@ pop :
 programme:
         push liste_declarations liste_fonctions pop
         {
+            arbre_abstrait = $3;
             $$ = $3;
         }
 ;
@@ -111,14 +113,11 @@ programme:
 liste_declarations:
         liste_declarations declaration
         {
-            $$=concat(2,$1,$2);
+
         }
     |   
         {
-            push_table();
-            $$ = "";
-            exprPile ePile = {NULL};
-            pileExprTab[++exprInc]= ePile;
+
         }
 ;
 
@@ -137,44 +136,45 @@ liste_fonctions:
 declaration:
         type liste_declarateurs ';'  
         {
-            if (is_void == 1){
-                yyerror("Déclaration de type void impossible");
-            }
-            $$ = concat(4, $1, " ", $2, ";\n");
+
         }
 ;
 
 liste_declarateurs:
         liste_declarateurs ',' declarateur 
         {
-            $$ = concat(3, $1, ",", $3);
+
         }
     |   declarateur 
         {
-            $$ = $1;
+
         }
 ;
 
 declarateur:
         IDENTIFICATEUR
         { 
+            /*
             declarer($1, 0, nb_dim, tailles, INT_T, 0);
-            $$ = $1;
+            */
+
+
         }
     |   declarateur '[' CONSTANTE ']' 
         { 
+            /*
             nb_dim++;
             tailles = realloc(tailles, nb_dim * sizeof(int));  
             if (tailles == NULL) {
                 yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
             }
             tailles[nb_dim - 1] = $3;   
-            $$ = concat(4, $1, "[", $3, "]");  
+            */
+
         }
     |   
         {
-            nb_dim = 0;
-            $$ = "";
+
         }
 ;
 
@@ -212,11 +212,10 @@ fonction:
             */
 
 
-            node_list *fils = create_node_list(1, create_node("BLOC", "ellipse", "black", "solid", NULL));
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
             char *label = (char *)malloc(len);
             snprintf(label, len, "%s, %s", $1, $2);
-            node *n = create_node(label, "invtrapezium", "blue", "solid", fils);
+            node *n = create_node(label, "invtrapezium", "blue", "solid", $9);
             free(label);
             tree *t = create_tree(n);
             $$ = t;
@@ -245,67 +244,153 @@ type:
 
 liste_parms:
         l_parms
+        {
+            $$ = $1;
+        }
     |
+        {
+            $$ = new_empty_node_list();
+        }
 ;
 
 l_parms :
         l_parms ',' parm
+        {
+            $$ = add_node_to_list($1, $3);
+        }
     |   parm
+        {
+            $$ = create_node_list(1, $1);
+        }
 ;
 
 parm:
         INT IDENTIFICATEUR
+        {
+            $$ = create_node($2, "ellipse", "black", "solid", NULL);
+        }
 ;
 
 liste_instructions :
-        liste_instructions instruction
+        l_instructions
+        {
+            $$ = $1;
+        }
+        
     |
+        {
+            $$ = NULL;
+        }
 ;
+
+l_instructions :
+        l_instructions instruction
+        {
+            $$ = add_node_to_list($1, $2);
+        }
+    |   instruction
+        {
+            $$ = create_node_list(1, $1);
+        }
 
 instruction:
         iteration
+        {
+            $$ = $1;
+        }
     |   selection
+        {
+            $$ = $1;
+        }
     |   saut
+        {
+            $$ = $1;
+        }
     |   affectation ';'
+        {
+            $$ = $1;
+        }
     |   bloc
+        {
+            $$ = $1;
+        }
     |   appel
+        {
+            $$ = $1;
+        }
 ;
 
 iteration:
         FOR '(' affectation ';' condition ';' affectation ')' instruction
+        {
+            node_list *fils = create_node_list(4, $3, $5, $7, $9);
+            node *n = create_node("FOR", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
     |   WHILE '(' condition ')' instruction
+        {
+            node_list *fils = create_node_list(2, $3, $5);
+            node *n = create_node("WHILE", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
 ;
 
 selection:
-        IF '(' condition ')' instruction %prec THEN 
+        IF '(' condition ')' instruction %prec THEN
+        {
+            node_list *fils = create_node_list(2, $3, $5);
+            node *n = create_node("IF", "diamond", "black", "solid", fils);
+            $$ = n;
+        }
     |   IF '(' condition ')' instruction ELSE instruction
+        {
+            node_list *fils = create_node_list(3, $3, $5, $7);
+            node *n = create_node("IF", "diamond", "black", "solid", fils);
+            $$ = n;
+        }
     |   SWITCH '(' expression ')' instruction
+        {
+            node_list *fils = create_node_list(2, $3, $5);
+            node *n = create_node("SWITCH", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
     |   CASE CONSTANTE ':' instruction
+        {
+            int len = strlen("case ") + strlen($2) + 1;
+            char *label = (char *)malloc(len);
+            snprintf(label, len, "case %s", $2);
+
+            node_list *fils = create_node_list(1, $4);
+            node *n = create_node(label, "ellipse", "black", "solid", fils);
+            $$ = n;
+
+            free(label);
+        }
     |   DEFAULT ':' instruction
+        {
+            node_list *fils = create_node_list(1, $3);
+            node *n = create_node("case default", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
 ;
 
 saut:
-        BREAK ';' {
-            char *nom = nodeName();
-            nodeEmpiler(&pileNode,nom,"BREAK",4,"");
-            $$ = nom;
+        BREAK ';' 
+        {
+            node *n = create_node("BREAK", "box", "black", "solid", NULL);
+            $$ = n;
         }
-    |   RETURN ';' {
-            has_return = 0;
-            char *parent = nodeName();
-            nodeEmpiler(&pileNode, parent, "RETURN", 2, "");
-            $$ = parent;
+    |   RETURN ';' 
+        {
+            node *n = create_node("RETURN", "trapezium", "blue", "solid", NULL);
+            $$ = n;
         }
-    |   RETURN expression ';' {
-            has_return = 1;
-            if(is_void ==1){
-                warningError("Return sur une fonction de type void interdit");
-            }
-        char *parent = nodeName();
-        lienEntreParentEtNom(&pileNode,$2,parent);
-        nodeEmpiler(&pileNode,parent,"RETURN",2,"");
-        $$ =parent;
-    }
+    |   RETURN expression ';' 
+        {
+            node_list *fils = create_node_list(1, $2);
+            node *n = create_node("RETURN", "trapezium", "blue", "solid", fils);
+            $$ = n;
+        }
 ;
 
 affectation:
@@ -326,24 +411,23 @@ bloc:
 
 appel:
         IDENTIFICATEUR '(' liste_expressions ')' ';'
+        {
+            node *n = create_node($1, "septagon", "black", "solid", $3);
+            $$ = n;
+        }
 ;
 
 variable:
         IDENTIFICATEUR
         {
-            /*
-            verifier_declaration($1);
-            char *nom = nodeName();
-            nodeEmpiler(&pileNode,nom,$1,6,"");
-            char *n = $1;
-            $$ = nom;
-            */
-
-            $$ = create_node($1, "ellipse", "black", "solid", NULL);
+            node *n = create_node($1, "ellipse", "black", "solid", NULL);
+            $$ = n;
         }
     |   variable '[' expression ']' 
         {
-
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("variable", "ellipse", "black", "solid", fils); /* Chercher le nom de la variabla dans la table de symbole et le mettre comme label du node */
+            $$ = n;
         }
 ;
 
@@ -353,21 +437,21 @@ expression:
             $$ = $2;
         }
     |   expression binary_op expression %prec OP
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node($2, "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
     |   MOINS expression 
         {
-            char *parent = nodeName();
-            lienEntreParentEtNom(&pileNode,$2,parent);
-            nodeEmpiler(&pileNode,parent,"- unaire",6,"");
-            $$ = parent;
+            node_list *fils = create_node_list(1, $2);
+            node *n = create_node($1, "ellipse", "black", "solid", fils);
+            $$ = n;
         }
     |   CONSTANTE 
         {
-            char *nom = nodeName();
-            nodeEmpiler(&pileNode,nom,$1,6,"");
-            $$ = nom;
-
-            
-
+            node *n = create_node($1, "ellipse", "black", "solid", NULL);
+            $$ = n;
         }
     |   variable 
         {
@@ -375,51 +459,129 @@ expression:
         }
     |   IDENTIFICATEUR '(' liste_expressions ')' 
         {
-            symbole_t *s = rechercher(top_table(), $1);
- 
+            node *n = create_node($1, "septagon", "black", "solid", $3);
+            $$ = n;
         }
 ;
 
 liste_expressions:
         l_expr
+        {
+            $$ = $1;
+        }
     |
+        {
+            $$ = new_empty_node_list();
+        }
 ;
 
 l_expr:
         l_expr ',' expression
+        {
+            $$ = add_node_to_list($1, $3);
+        }
     |   expression
+        {
+            $$ = create_node_list(1, $1);
+        }
 ;
 
 condition:
         NOT '(' condition ')'
+        {
+            node_list *fils = create_node_list(1, $3);
+            node *n = create_node("NOT", "ellipse", "black", "solid", fils);
+            $$ = n;   
+        }
     |   condition binary_rel condition %prec REL
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node($2, "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
     |   '(' condition ')'
+        {
+            $$ = $2;   
+        }
     |   expression binary_comp expression
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node($2, "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
 ;
 
 binary_op:
         PLUS
+        {
+            $$ = $1;
+        }
     |   MOINS
+        {
+            $$ = $1;
+        }
     |   MUL
+        {
+            $$ = $1;
+        }
     |   DIV
+        {
+            $$ = $1;
+        }
     |   LSHIFT
+        {
+            $$ = $1;
+        }
     |   RSHIFT
+        {
+            $$ = $1;
+        }
     |   BAND
+        {
+            $$ = $1;
+        }
     |   BOR
+        {
+            $$ = $1;
+        }
 ;
 
 binary_rel:
         LAND
+        {
+            $$ = $1;
+        }
     |   LOR
+        {
+            $$ = $1;
+        }
 ;
 
 binary_comp:
         LT
+        {
+            $$ = $1;
+        }
     |   GT
+        {
+            $$ = $1;
+        }
     |   GEQ
+        {
+            $$ = $1;
+        }
     |   LEQ
+        {
+            $$ = $1;
+        }
     |   EQ
+        {
+            $$ = $1;
+        }
     |   NEQ
+        {
+            $$ = $1;
+        }
 ;
 
 %%
@@ -452,5 +614,8 @@ int main(int argc, char* argv[]){
     }
     yyparse();
     printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! - Construction de l'arbre syntaxique sans erreurs\n" COLOR_RESET);
+    print_tree_list(arbre_abstrait);
+    destroy_tree_list(arbre_abstrait);
+
     return 0;
 }
