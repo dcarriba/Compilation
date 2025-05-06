@@ -1,10 +1,11 @@
 #ifndef ARBRE_H
 #define ARBRE_H
 
-#include "noeud.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "couleurs_terminal.h"
+#include "noeuds.h"
 
 typedef struct _tree {
     node *racine; 

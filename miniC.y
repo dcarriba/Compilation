@@ -3,21 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils/tables_symboles.h"
 #include "utils/old/arbresPile.h"
 #include "utils/old/arbres.h"
-#include "utils/noeud.h"
-#include "utils/arbre.h"
-
-#define COLOR_RESET       "\033[0m"
-#define COLOR_RED         "\033[1;31m"
-#define COLOR_GREEN       "\033[1;32m"
-#define COLOR_YELLOW      "\033[1;33m"
-#define COLOR_BLUE        "\033[1;34m"
-#define COLOR_MAGENTA     "\033[1;35m"
-#define COLOR_CYAN        "\033[1;36m"
- 
-
+#include "utils/couleurs_terminal.h"
+#include "utils/tables_symboles.h"
+#include "utils/noeuds.h"
+#include "utils/arbres.h"
 
 extern FILE *yyin;
 extern int yylineno;
@@ -32,7 +23,6 @@ exprPile pileExpr = {NULL};
 exprPile pileExprTab[100];
 int exprInc = 0;
 
-
 int n_erreur = 0;
 int n_warning = 0;
 int n_param = 0;
@@ -40,7 +30,6 @@ int is_void = 0;
 int is_int = 0;
 int is_switch = 0;
 int has_return = 0;
-
 
 int nb_dim = 0;
 int *tailles;

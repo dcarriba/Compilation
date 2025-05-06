@@ -1,7 +1,7 @@
-#include "noeud.h"
+#include "noeuds.h"
 
 /*
- * Variable globale utilisé pour l'identifiant unique des noeuds
+ * Variable globale utilisé pour le nom unique (identifiant) des noeuds
  */
 int node_number = 0;
 
@@ -31,7 +31,7 @@ char *unique_node_name() {
 
     char *name = (char *)malloc(length);
     if (!name) {
-        fprintf(stderr, "Memory allocation failed for node name\n");
+        fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour char *name dans unique_node_name()\n" COLOR_RESET);
         exit(EXIT_FAILURE);
     }
 
@@ -42,13 +42,13 @@ char *unique_node_name() {
 /*
  * Crée et renvoie un nouveau noeud
  */
-node *create_node(char *label, char *color, int shapeNumber, node *parent, node_list *fils){
+node *create_node(char *label, char *shape, char *color, char *style, node_list *fils){
     node *n = (node *)malloc(sizeof(node));
     n->nom = unique_node_name();
     n->label = strdup_safe(label);
+    n->shape = strdup_safe(shape);
     n->color = strdup_safe(color);
-    n->shapeNumber = shapeNumber;
-    n->parent = parent;
+    n->style = strdup_safe(style);
     n->fils = fils;
     return n;
 }
@@ -57,10 +57,15 @@ node *create_node(char *label, char *color, int shapeNumber, node *parent, node_
  * Détruit le neoud et libère son espace mémoire
  */
 void destroy_node(node *n){
-    free(n->nom);
-    free(n->label);
-    free(n->color);
-    free(n);
+    if (n) {
+        if (n->nom) free(n->nom);
+        if (n->label) free(n->label);
+        if (n->shape) free(n->shape);
+        if (n->color) free(n->color);
+        if (n->style) free(n->style);
+        if (n->fils) detroy_node_list(n->fils);
+        free(n);
+    }
 }
 
 /*
@@ -69,26 +74,26 @@ void destroy_node(node *n){
 node_list *new_empty_node_list() {
     node_list *nl = (node_list *)malloc(sizeof(node_list));
     if (!nl) {
-        fprintf(stderr, "Erreur : allocation mémoire échouée pour node_list\n");
+        fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour node_list dans new_empty_node_list()\n" COLOR_RESET);
         exit(EXIT_FAILURE);
     }
     nl->item = NULL;
-    nl->suivants = NULL;
+    nl->suivant = NULL;
     return nl;
 }
 
 /*
  * Crée une nouvelle liste de noeuds constitué de tous les neouds en paramètres
  */
-node_list *create_node_list(int nbNodes, ...) {
+node_list *create_node_list(int nb_nodes, ...) {
     int i;
     va_list args;
-    va_start(args, nbNodes);
+    va_start(args, nb_nodes);
 
-    node_list *premier = NULL;
+    node_list *first = NULL;
     node_list *current = NULL;
 
-    for (i = 0; i < nbNodes; i++) {
+    for (i = 0; i < nb_nodes; i++) {
         node *n = va_arg(args, node *);
         
         if (n != NULL) {
@@ -96,17 +101,17 @@ node_list *create_node_list(int nbNodes, ...) {
 
             new_nl->item = n;
 
-            if (premier == NULL) {
-                premier = new_nl;
+            if (first == NULL) {
+                first = new_nl;
             } else {
-                current->suivants = new_nl; 
+                current->suivant = new_nl; 
             }
             current = new_nl;
         }
     }
 
     va_end(args);
-    return premier;
+    return first;
 }
 
 /*
@@ -116,7 +121,8 @@ void detroy_node_list(node_list *nl){
     node_list *current = nl;
     while (current != NULL) {
         node_list *tmp = current;
-        current = current->suivants;
+        destroy_node(tmp->item);
+        current = tmp->suivant;
         free(tmp);
     }
 }

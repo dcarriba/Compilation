@@ -1,4 +1,4 @@
-#include "arbre.h"
+#include "arbres.h"
 
 /*
  * Crée un arbre avec sa racine
@@ -6,7 +6,7 @@
 tree *create_tree(node *racine) {
     tree *t = (tree *)malloc(sizeof(tree));
     if (!t) {
-        fprintf(stderr, "Erreur : allocation mémoire échouée pour tree\n");
+        fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour tree dans create_tree()\n" COLOR_RESET);
         exit(EXIT_FAILURE);
     }
     t->racine = racine;
@@ -29,7 +29,7 @@ void destroy_tree(tree *t) {
 tree_list *new_empty_tree_list() {
     tree_list *tl = (tree_list *)malloc(sizeof(tree_list));
     if (!tl) {
-        fprintf(stderr, "Erreur : allocation mémoire échouée pour tree_list\n");
+        fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour tree_list dans new_empty_tree_list() \n" COLOR_RESET);
         exit(EXIT_FAILURE);
     }
     tl->item = NULL;
@@ -43,7 +43,7 @@ tree_list *new_empty_tree_list() {
 tree_list *add_tree_to_list(tree_list *tl, tree *t) {
     tree_list *new_tl = (tree_list *)malloc(sizeof(tree_list));
     if (!new_tl) {
-        fprintf(stderr, "Erreur : allocation mémoire échouée pour tree_list\n");
+        fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour tree_list dans add_tree_to_list()\n" COLOR_RESET);
         exit(EXIT_FAILURE);
     }
     new_tl->item = t;
@@ -58,8 +58,8 @@ void destroy_tree_list(tree_list *tl) {
     tree_list *current = tl;
     while (current != NULL) {
         tree_list *tmp = current;
-        current = current->suivant;
         destroy_tree(tmp->item);
+        current = tmp->suivant;
         free(tmp);
     }
 }

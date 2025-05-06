@@ -7,11 +7,12 @@ L                       [a-zA-Z_]
 %{
 
 #include <stdio.h>
-#include "utils/tables_symboles.h"
 #include "utils/old/arbresPile.h"
 #include "utils/old/arbres.h"
-#include "utils/noeud.h"
-#include "utils/arbre.h"
+#include "utils/couleurs_terminal.h"
+#include "utils/tables_symboles.h"
+#include "utils/noeuds.h"
+#include "utils/arbres.h"
 #include "y.tab.h"
 
 extern YYSTYPE yylval;
@@ -80,7 +81,7 @@ int yyerror(char *s);
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* Ignorer les commentaires */ }
 
 .                           {
-                                fprintf (stderr, "\033[1;31m[Error] lexical error %s à la ligne %d\033[0m\n", yytext, yylineno);
+                                fprintf (stderr, COLOR_RED "[Error] lexical error %s à la ligne %d" COLOR_RESET, yytext, yylineno);
                                 exit(1); 
                             }
  
