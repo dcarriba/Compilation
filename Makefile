@@ -18,8 +18,8 @@ YACC_OBJECT = $(YACC_OUTPUT:.c=.o)
 VALGRIND = valgrind
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all -s
 
-# On récupère tous les fichiers utils/*.c et utils/**/*.c
-SRCS = $(wildcard utils/*.c) $(wildcard utils/**/*.c)
+# On récupère tous les fichiers utils/*.c
+SRCS = $(wildcard utils/*.c)
 
 # Pour générer les fichiers objets de ces fichiers
 OBJECTS = $(SRCS:.c=.o)

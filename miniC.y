@@ -3,12 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils/old/arbresPile.h"
-#include "utils/old/arbres.h"
 #include "utils/couleurs_terminal.h"
 #include "utils/tables_symboles.h"
 #include "utils/noeuds.h"
 #include "utils/arbres.h"
+#include "utils/extras.h"
 
 extern FILE *yyin;
 extern int yylineno;
