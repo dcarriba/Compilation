@@ -631,6 +631,10 @@ void finProgramme(){
     liberer_pile(&pile_talbles);
     liberer_pile(&pile_tablesFonc);
     yylex_destroy();
+    if (tailles != NULL) {
+        free(tailles);
+        tailles = NULL;
+    }
 }
 
 int main(int argc, char* argv[]){
@@ -638,13 +642,14 @@ int main(int argc, char* argv[]){
         fprintf(stderr, COLOR_RED "[Error] Erreur de l'enregistrement de la fonction finProgramme() avec atexit()\n" COLOR_RESET);
         return 4;
     }
-    FILE* fichier;
+
+    FILE* fichier = NULL;
     char* nom_fichier;
+
     if (argc == 1){
         yyin = stdin;
     } else if (argc == 2){
         nom_fichier = argv[1];
-        /* si fichier existe pas alors erreur */
         if ((fichier = fopen(nom_fichier,"r")) == NULL){ 
             fprintf(stderr, COLOR_RED "[Error] Erreur de lecture du ficher : %s\n" COLOR_RESET, nom_fichier);
             return 2;
@@ -654,10 +659,16 @@ int main(int argc, char* argv[]){
         fprintf(stderr, COLOR_RED "[Error] Veuillez ne pas donner plus d'un fichier en argument.\n" COLOR_RESET);
         return 3;
     }
+
     yyparse();
     printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! - Construction de l'arbre syntaxique sans erreurs\n" COLOR_RESET);
     print_tree_list(arbre_abstrait);
     destroy_tree_list(arbre_abstrait);
 
+    if (fichier != NULL) {
+        fclose(fichier);  
+    }
+
     return 0;
 }
+
