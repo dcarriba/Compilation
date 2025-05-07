@@ -184,7 +184,7 @@ declarateur:
             if (tailles == NULL) {
                 yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
             }
-            tailles[nb_dim - 1] = (int)$3;
+            tailles[nb_dim - 1] = atoi($3);
             $$ = concat(4,$1,"[",$3,"]");
             
 
@@ -426,9 +426,9 @@ affectation:
         variable '=' expression 
         {   
         
-            symbole_t *s = rechercher_dans_pile(pile_talbles,$1->nom);
+            symbole_t *s = rechercher_dans_pile(pile_talbles,$1->label);
             if (s == NULL){
-                warningError(concat(6,"affectation sur la variable ",$1->nom," qui n'est pas déclarer"));
+                warningError(concat(3,"affectation sur la variable ",$1->label," qui n'est pas déclarer"));
             }
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node(":=", "ellipse", "black", "solid", fils);
