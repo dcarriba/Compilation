@@ -455,7 +455,7 @@ appel:
             }
             if (a->aritee != length_of_node_list($3)){
                 char *aritee = itoa(a->aritee);
-                char *len = length_of_node_list($3);
+                char *len = itoa(length_of_node_list($3));
                 warningError(concat(4,"Fonction appelé avec ",len," parametres au lieu de",aritee));
                 free(len);
                 free(aritee);
