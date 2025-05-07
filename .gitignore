@@ -8,3 +8,5 @@ analyse_syntax
 compilateur
 *.o
 .vscode/
+*.dot
+*.png
