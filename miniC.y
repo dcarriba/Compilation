@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils/old/arbresPile.h"
-#include "utils/old/arbres.h"
 #include "utils/couleurs_terminal.h"
 #include "utils/tables_symboles.h"
 #include "utils/noeuds.h"
 #include "utils/arbres.h"
+#include "utils/extras.h"
+#include "utils/dot.h"
 
 extern FILE *yyin;
 extern int yylineno;
@@ -240,7 +240,7 @@ fonction:
 
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
             char *label = (char *)malloc(len);
-            snprintf(label, len, "%s, %s", $1, $2);
+            snprintf(label, len, "%s, %s", $2, $1);
             node *n = create_node(label, "invtrapezium", "blue", "solid", $9);
             free(label);
             tree *t = create_tree(n);
@@ -674,14 +674,24 @@ int main(int argc, char* argv[]){
     }
 
     yyparse();
-    printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! - Construction de l'arbre syntaxique sans erreurs\n" COLOR_RESET);
-    print_tree_list(arbre_abstrait);
-    destroy_tree_list(arbre_abstrait);
-
     if (fichier != NULL) {
         fclose(fichier);  
     }
+    if (n_erreur > 0) {
+        printf(COLOR_RED "[Error] Erreur lors de l'analyse lexicale, syntaxique ou sémantique" COLOR_RESET);
+        return 1;
+    }
+    printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! - Construction de l'arbre syntaxique sans erreurs\n" COLOR_RESET);
+    /* print_tree_list(arbre_abstrait); */
+    
+    char *nom_fichier_dot = strdup(nom_fichier);
+    char *point = strrchr(nom_fichier_dot, '.'); /* pointe vers le . du .c a la fin du nom du fichier */
+    if (point) {
+        *point = '\0'; /* on enlève le .c à la fin du nom du fichier */
+    }
+    convert_to_dot(arbre_abstrait, nom_fichier_dot);
+    free(nom_fichier_dot);
 
+    destroy_tree_list(arbre_abstrait);
     return 0;
 }
-

@@ -18,8 +18,8 @@ YACC_OBJECT = $(YACC_OUTPUT:.c=.o)
 VALGRIND = valgrind
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all -s
 
-# On récupère tous les fichiers utils/*.c et utils/**/*.c
-SRCS = $(wildcard utils/*.c) $(wildcard utils/**/*.c)
+# On récupère tous les fichiers utils/*.c
+SRCS = $(wildcard utils/*.c)
 
 # Pour générer les fichiers objets de ces fichiers
 OBJECTS = $(SRCS:.c=.o)
@@ -38,6 +38,7 @@ all: $(EXECUTABLE)
 
 # Pour compiler l'exécutable
 $(EXECUTABLE): $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
+	rm -f *.dot *.png Tests/*.dot Tests/*.png
 	$(CC) $(CFLAGS) $(OBJECTS) $(LEX_OBJECT) $(YACC_OBJECT) -o $(EXECUTABLE)
 	rm -f $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
 
@@ -71,7 +72,7 @@ run: $(EXECUTABLE)
 	@echo "$(GREEN)Compilation réussie!$(RESET)\n"
 
 	@echo "Analyse de exempleminiC.c :"
-	@./$(EXECUTABLE) exempleminiC.c || echo "$(RED)Error $$?$(RESET)" >&2;
+	@( ./$(EXECUTABLE) exempleminiC.c && ( dot -Tpng exempleminiC.dot -o exempleminiC.png ; echo "Génération de exempleminiC.png à partir de exempleminiC.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2;
 	@echo "";
 
 	@if [ ! -d "Tests" ]; then \
@@ -82,7 +83,8 @@ run: $(EXECUTABLE)
 	@echo "Analyse des fichiers .c dans le dossier \"Tests\"...\n"
 	@for file in Tests/*.c; do \
 		echo "Analyse de $$file :"; \
-		./$(EXECUTABLE) $$file || echo "$(RED)Error $$?$(RESET)" >&2; \
+		base=$$(basename $$file .c); \
+		( ./$(EXECUTABLE) $$file && ( dot -Tpng Tests/$$base.dot -o Tests/$$base.png && echo "Génération de Tests/$$base.png à partir de Tests/$$base.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2; \
 		echo ""; \
 	done
 
@@ -96,7 +98,7 @@ valgrind-run: $(EXECUTABLE)
 	@echo "$(GREEN)Compilation réussie!$(RESET)\n"
 
 	@echo "Analyse de exempleminiC.c avec valgrind :"
-	@$(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) exempleminiC.c || echo "$(RED)Error $$?$(RESET)" >&2;
+	@( $(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) exempleminiC.c && ( dot -Tpng exempleminiC.dot -o exempleminiC.png ; echo "Génération de exempleminiC.png à partir de exempleminiC.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2;
 	@echo "";
 
 	@if [ ! -d "Tests" ]; then \
@@ -107,7 +109,8 @@ valgrind-run: $(EXECUTABLE)
 	@echo "Analyse des fichiers .c dans le dossier \"Tests\" avec valgrind...\n"
 	@for file in Tests/*.c; do \
 		echo "Analyse de $$file avec valgrind :"; \
-		$(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) $$file || echo "$(RED)Error $$?$(RESET)" >&2; \
+		base=$$(basename $$file .c); \
+		( $(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) $$file && ( dot -Tpng Tests/$$base.dot -o Tests/$$base.png && echo "Génération de Tests/$$base.png à partir de Tests/$$base.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2; \
 		echo ""; \
 	done
 
@@ -117,4 +120,5 @@ gdb: $(EXECUTABLE)
 
 # Règle pour supprimer l'exécutable et tous les fichiers intermédiaires
 clean:
+	rm -f *.dot *.png Tests/*.dot Tests/*.png
 	rm -f $(EXECUTABLE) $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
