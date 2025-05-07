@@ -454,7 +454,11 @@ appel:
                 warningError(concat(3,"Fonction ",$1," pas déclarer"));
             }
             if (a->aritee != length_of_node_list($3)){
-                warningError(concat(6,"Fonction ",$1,"a",length_of_node_list($3),"parametres au lieu de",a->aritee));
+                char *aritee = itoa(a->aritee);
+                char *len = length_of_node_list($3);
+                warningError(concat(4,"Fonction appelé avec ",len," parametres au lieu de",aritee));
+                free(len);
+                free(aritee);
             }
             node *n = create_node($1, "septagon", "black", "solid", $3);
             $$ = n;

@@ -6,6 +6,14 @@
 
 int numNode = 1;
 
+char *itoa(int value) {
+    char *buffer = malloc(12); // Espace pour un int 32 bits signé (-2147483648 à 2147483647)
+    if (buffer != NULL) {
+        sprintf(buffer, "%d", value);  // Convertit int en chaîne
+    }
+    return buffer;
+}
+
 /* 
  * Concatene des chaines de characteres
  */
