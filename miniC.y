@@ -168,6 +168,9 @@ declarateur:
         IDENTIFICATEUR
         { 
             declarer(pile_talbles, $1, nb_dim,tailles, INT_T);
+            free(tailles);
+            tailles = NULL;
+            
             nb_dim = 0;
             $$ = $1;
             /*
