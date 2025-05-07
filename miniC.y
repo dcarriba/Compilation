@@ -16,9 +16,7 @@ int yylex();
 int yyerror();
 int yylex_destroy();
 
-/*
- * Arbre Abstrait 
- */
+/* Arbre Syntaxique Abstrait du programme */
 tree_list *arbre_abstrait = NULL;
 
 table_t *pile_talbles = NULL;
@@ -38,7 +36,7 @@ int *tailles;
 int nb_aritee = 0;
 
 void warningError(char *s){
-    fprintf(stdout, COLOR_MAGENTA "[Warning] %s à la ligne %d: \n" COLOR_RESET, s, yylineno);
+    fprintf(stdout, COLOR_MAGENTA "[Warning] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
     n_warning++;
 }
 
@@ -61,8 +59,8 @@ int yyerror(char *s){
 
 %type<liste_arbres> programme liste_fonctions
 %type<arbre> fonction
-%type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms
-%type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm
+%type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
+%type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
 %type<var> type binary_op binary_rel binary_comp liste_declarateurs declaration liste_declarations declarateur 
 
 
@@ -241,9 +239,10 @@ fonction:
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
             char *label = (char *)malloc(len);
             snprintf(label, len, "%s, %s", $2, $1);
-            node *n = create_node(label, "invtrapezium", "blue", "solid", $9);
+            node *bloc= create_node("BLOC", "ellipse", "black", "solid", $9);
+            node *fonction = create_node(label, "invtrapezium", "blue", "solid", create_node_list(1, bloc));
             free(label);
-            tree *t = create_tree(n);
+            tree *t = create_tree(fonction);
             $$ = t;
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
@@ -376,28 +375,44 @@ selection:
             node *n = create_node("IF", "diamond", "black", "solid", fils);
             $$ = n;
         }
-    |   SWITCH '(' expression ')' instruction
+    |   SWITCH '(' expression ')' '{' push liste_switch_case pop '}'
         {
-            node_list *fils = create_node_list(2, $3, $5);
+            node_list *fils = new_empty_node_list();
+            fils->item = $3;
+            fils->suivant = $7;
             node *n = create_node("SWITCH", "ellipse", "black", "solid", fils);
             $$ = n;
         }
-    |   CASE CONSTANTE ':' instruction
+;
+
+liste_switch_case:
+        switch_case
+        {
+            node_list *nl = create_node_list(1, $1);
+            $$ = nl;
+        }
+    |   liste_switch_case switch_case
+        {
+            node_list *nl = add_node_to_list($1, $2);
+            $$ = nl;
+        }
+;
+
+switch_case:
+        CASE CONSTANTE ':' liste_instructions
         {
             int len = strlen("case ") + strlen($2) + 1;
             char *label = (char *)malloc(len);
             snprintf(label, len, "case %s", $2);
 
-            node_list *fils = create_node_list(1, $4);
-            node *n = create_node(label, "ellipse", "black", "solid", fils);
+            node *n = create_node(label, "ellipse", "black", "solid", $4);
             $$ = n;
 
             free(label);
         }
-    |   DEFAULT ':' instruction
+    |   DEFAULT ':' liste_instructions
         {
-            node_list *fils = create_node_list(1, $3);
-            node *n = create_node("case default", "ellipse", "black", "solid", fils);
+            node *n = create_node("case default", "ellipse", "black", "solid", $3);
             $$ = n;
         }
 ;
@@ -431,7 +446,8 @@ affectation:
         
             symbole_t *s = rechercher_dans_pile(pile_talbles,$1->label);
             if (s == NULL){
-                char *err = concat(3,"affectation sur la variable ",$1->label," qui n'est pas déclarer");
+                /* Attention met le label TAB pour les variables qui sont des tableaux */
+                char *err = concat(3, "Affectation sur la variable ", $1->label, " qui n'est pas déclaré");
                 warningError(err);
                 free(err);
             }
@@ -477,11 +493,24 @@ variable:
             node *n = create_node($1, "ellipse", "black", "solid", NULL);
             $$ = n;
         }
-    |   variable '[' expression ']' 
+    |   tableau 
         {
-            node_list *fils = create_node_list(2, $1, $3);
-            node *n = create_node("variable", "ellipse", "black", "solid", fils); /* Chercher le nom de la variabla dans la table de symbole et le mettre comme label du node */
+            node *n = create_node("TAB", "ellipse", "black", "solid", $1);
             $$ = n;
+        }
+;
+
+tableau:
+        IDENTIFICATEUR '[' expression ']'
+        {
+            node *n = create_node($1, "ellipse", "black", "solid", NULL);
+            node_list *nl = create_node_list(2, n, $3);
+            $$ = nl;
+        }
+    |   tableau '[' expression ']'
+        {
+            node_list *nl = add_node_to_list($1, $3);
+            $$ = nl;
         }
 ;
 
