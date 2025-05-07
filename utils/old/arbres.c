@@ -35,7 +35,7 @@ char *concat(int nbArgs, ...) {
         return NULL;
     }
 
-    result[0] = '\0'; /* init string vide */
+    result[0] = '\0'; /* Init string vide */
 
     va_start(args, nbArgs);
     for (i = 0; i < nbArgs; i++) {

@@ -122,7 +122,7 @@ programme:
 liste_declarations:
         liste_declarations declaration
         {
-            $$=concat(2,$1,$2);
+            //$$=concat(2,$1,$2);
         }
     |   
         { $$ = "";
@@ -148,7 +148,7 @@ declaration:
             if(is_void == 1){
                 yyerror("une déclaration ne peux pas etre de type void");
             }
-            $$ = concat(4,$1," ",$2, ";\n");
+            //$$ = concat(4,$1," ",$2, ";\n");
 
         }
 ;
@@ -156,7 +156,7 @@ declaration:
 liste_declarateurs:
         liste_declarateurs ',' declarateur 
         {
-            $$ = concat(3,$1,",",$3);
+            //$$ = concat(3,$1,",",$3);
         }
     |   declarateur 
         {
@@ -188,7 +188,7 @@ declarateur:
                 yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
             }
             tailles[nb_dim - 1] = atoi($3);
-            $$ = concat(4,$1,"[",$3,"]");
+            //$$ = concat(4,$1,"[",$3,"]");
             
 
         }
@@ -431,7 +431,9 @@ affectation:
         
             symbole_t *s = rechercher_dans_pile(pile_talbles,$1->label);
             if (s == NULL){
-                warningError(concat(3,"affectation sur la variable ",$1->label," qui n'est pas déclarer"));
+                char *err = concat(3,"affectation sur la variable ",$1->label," qui n'est pas déclarer");
+                warningError(err);
+                free(err);
             }
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node(":=", "ellipse", "black", "solid", fils);
@@ -451,14 +453,18 @@ appel:
         {   
             symbole_t *a = rechercher_dans_pile(pile_tablesFonc, $1);
             if (a == NULL){
-                warningError(concat(3,"Fonction ",$1," pas déclarer"));
+                char *war = concat(3,"Fonction ",$1," pas déclarer");
+                warningError(war);
+                free(war);
             }
             if (a->aritee != length_of_node_list($3)){
                 char *aritee = itoa(a->aritee);
                 char *len = itoa(length_of_node_list($3));
-                warningError(concat(4,"Fonction appelé avec ",len," parametres au lieu de",aritee));
+                char *war = concat(4,"Fonction appelé avec ",len," parametres au lieu de",aritee);
+                warningError(war);
                 free(len);
                 free(aritee);
+                free(war);
             }
             node *n = create_node($1, "septagon", "black", "solid", $3);
             $$ = n;
