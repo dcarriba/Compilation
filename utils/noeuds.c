@@ -83,6 +83,19 @@ node_list *new_empty_node_list() {
 }
 
 /*
+ * Renvoie la longueur (le nombre d'éléments) d'une node_list
+ */
+int length_of_node_list(node_list *nl) {
+    int length = 0;
+    node_list *current = nl;
+    while (current != NULL) {
+        length++;
+        current = current->suivant;
+    }
+    return length;
+}
+
+/*
  * Crée une nouvelle liste de noeuds constitué de tous les neouds en paramètres
  */
 node_list *create_node_list(int nb_nodes, ...) {

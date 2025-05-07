@@ -3,54 +3,47 @@
 #include <string.h>
 #include "tables_symboles.h"
 
-static table_t *pile = NULL; /* pile */
-static int pos = 0;
-
-symbole_t listeAppelFonctions[100];
-int incAppel = 0;
-/* 
- * Ajout d'une table de symbole 
+/*
+ * Pousse une nouvelle table sur la pile
  */
-void push_table() {
-    table_t *t = (table_t *)malloc(sizeof(table_t));
+void push_table(table_t **pile) {
+    table_t *t = malloc(sizeof(table_t));
     t->symbole = NULL;
-    t->suivant = pile;
-    pile = t;
+    t->suivant = *pile;
+    *pile = t;
 }
 
-/* 
- * Pour supprimer la derniere table de symbole de la pile et vider la mem
+/*
+ * Retire la table au sommet de la pile et libère sa mémoire
  */
-void pop_table() {
-    if (pile) {
-        table_t *tmp = pile;
-        pile = pile->suivant;
+void pop_table(table_t **pile) {
+    if (*pile) {
+        table_t *tmp = *pile;
+        *pile = tmp->suivant;
         detruire_table(tmp);
     }
 }
 
-/* 
- * Récupère le sommet de la pile, ie. la derniere table de symbole
+/*
+ * Renvoie la table au sommet de la pile
  */
-table_t* top_table() { 
+table_t* top_table(table_t *pile) {
     return pile;
 }
 
 /*
- * Pour créer et ajouter un nouveau symbole un table de symbole 
+ * Ajoute un symbole à une table donnée
  */
-symbole_t* ajouter(table_t *table, char *nom, int nbParametresF, int nbDimensionsTab, int *taillesTab, type_t type, int estFonction) {
+symbole_t* ajouter(table_t *table, char *nom, int aritee, int *taillesTab, type_t type) {
     symbole_t *s = malloc(sizeof(symbole_t));
     s->nom = strdup(nom);
-    s->nbParametresF = nbParametresF;
-    s->nbDimensionsTab = nbDimensionsTab;
-    s->estFonction = estFonction;
+    s->aritee = aritee;
     s->type = type;
     s->taillesTab = NULL;
 
-    if (nbDimensionsTab > 0 && taillesTab != NULL) {
-        s->taillesTab = malloc(nbDimensionsTab * sizeof(int));
-        for (int i = 0; i < nbDimensionsTab; i++) {
+    if (aritee > 0 && taillesTab != NULL) {
+        s->taillesTab = malloc(aritee * sizeof(int));
+        for (int i = 0; i < aritee; i++) {
             s->taillesTab[i] = taillesTab[i];
         }
     }
@@ -60,48 +53,61 @@ symbole_t* ajouter(table_t *table, char *nom, int nbParametresF, int nbDimension
     return s;
 }
 
-void declarer(char *nom, int nbParametresF, int nbDimensionsTab, int *taillesTab, type_t type, int estFonction) {
+/*
+ * Déclare un symbole dans la table au sommet de la pile
+ */
+void declarer(table_t *pile, char *nom, int aritee, int *taillesTab, type_t type) {
     if (pile == NULL) {
         fprintf(stderr, "Erreur : pile de symboles vide !\n");
         exit(EXIT_FAILURE);
     }
 
-    if (rechercher(top_table(), nom)) {
+    if (rechercher(top_table(pile), nom)) {
         fprintf(stderr, "Erreur : redéclaration de la variable %s\n", nom);
         exit(EXIT_FAILURE);
     }
 
-    ajouter(top_table(), nom, nbParametresF, nbDimensionsTab, taillesTab, type, estFonction);
+    ajouter(top_table(pile), nom, aritee, taillesTab, type);
 }
 
-void verifier_declaration(char *nom) {
-    if (!rechercher_dans_pile(nom)) {
+/*
+ * Vérifie si un symbole a été déclaré
+ */
+void verifier_declaration(table_t *pile, char *nom) {
+    if (!rechercher_dans_pile(pile, nom)) {
         fprintf(stderr, "Erreur : %s n'a pas été déclarée !\n", nom);
         exit(EXIT_FAILURE);
     }
 }
 
-void verifier_dimensions(char *nom, int nbDemandees) {
-    symbole_t *s = rechercher_dans_pile(nom);
+/*
+ * Vérifie si le nombre de dimensions est correct
+ */
+void verifier_dimensions(table_t *pile, char *nom, int nbDemandees) {
+    symbole_t *s = rechercher_dans_pile(pile, nom);
     if (!s) {
         fprintf(stderr, "Erreur : %s n'a pas été déclarée !\n", nom);
         exit(EXIT_FAILURE);
     }
 
-    if (s->nbDimensionsTab != nbDemandees) {
+    if (s->aritee != nbDemandees) {
         fprintf(stderr, "Erreur : Mauvais nombre de dimensions pour %s. Attendu : %d, fourni : %d\n",
-                nom, s->nbDimensionsTab, nbDemandees);
+                nom, s->aritee, nbDemandees);
+        exit(EXIT_FAILURE);
     }
 }
 
-void verifier_tailles(char *nom, int nbDemandees, int *taillesDemandees) {
-    symbole_t *s = rechercher_dans_pile(nom);
+/*
+ * Vérifie si les tailles de dimensions sont correctes
+ */
+void verifier_tailles(table_t *pile, char *nom, int nbDemandees, int *taillesDemandees) {
+    symbole_t *s = rechercher_dans_pile(pile, nom);
     if (!s) {
         fprintf(stderr, "Erreur : %s n’a pas été déclarée !\n", nom);
         exit(EXIT_FAILURE);
     }
 
-    if (s->nbDimensionsTab != nbDemandees) {
+    if (s->aritee != nbDemandees) {
         fprintf(stderr, "Erreur : Mauvais nombre de dimensions pour %s\n", nom);
         exit(EXIT_FAILURE);
     }
@@ -110,22 +116,30 @@ void verifier_tailles(char *nom, int nbDemandees, int *taillesDemandees) {
         if (s->taillesTab[i] != taillesDemandees[i]) {
             fprintf(stderr, "Erreur : Dimension %d incorrecte pour %s. Attendu : %d, fourni : %d\n",
                     i + 1, nom, s->taillesTab[i], taillesDemandees[i]);
+            exit(EXIT_FAILURE);
         }
     }
 }
-void modifier_dimensions(char *nom,int newNbDimensionsTab){
-    symbole_t *s = rechercher_dans_pile(nom);
-    s->nbDimensionsTab = newNbDimensionsTab;
-
-}
-void modifier_tailles(char *nom, int *newTailles){
-    symbole_t *s = rechercher_dans_pile(nom);
-    s->taillesTab = newTailles;
-}
- 
 
 /*
- * Rechercher un symbole dans la table
+ * Modifie l'aritee d'un symbole
+ */
+void modifier_aritee(table_t *pile, char *nom, int nouvelleAritee) {
+    symbole_t *s = rechercher_dans_pile(pile, nom);
+    s->aritee = nouvelleAritee;
+}
+
+/*
+ * Modifie les tailles de dimensions
+ */
+void modifier_tailles(table_t *pile, char *nom, int *newTailles) {
+    symbole_t *s = rechercher_dans_pile(pile, nom);
+    if (s->taillesTab) free(s->taillesTab);
+    s->taillesTab = newTailles;
+}
+
+/*
+ * Recherche un symbole dans une table
  */
 symbole_t* rechercher(table_t *table, char *nom) {
     for (symbole_t *s = table->symbole; s != NULL; s = s->suivant) {
@@ -136,9 +150,9 @@ symbole_t* rechercher(table_t *table, char *nom) {
 }
 
 /*
- * Rechercher un symbole dans toutes les tables sur la pile
+ * Recherche un symbole dans toute la pile
  */
-symbole_t* rechercher_dans_pile(char *nom) {
+symbole_t* rechercher_dans_pile(table_t *pile, char *nom) {
     for (table_t *t = pile; t != NULL; t = t->suivant) {
         symbole_t *s = rechercher(t, nom);
         if (s) return s;
@@ -146,8 +160,8 @@ symbole_t* rechercher_dans_pile(char *nom) {
     return NULL;
 }
 
-/* 
- * Supprimer un symbole dans la table et vide la mem alloué
+/*
+ * Supprime un symbole d'une table
  */
 void supprimer(table_t *table, char *nom) {
     symbole_t **pp = &table->symbole;
@@ -155,9 +169,7 @@ void supprimer(table_t *table, char *nom) {
         if (strcmp((*pp)->nom, nom) == 0) {
             symbole_t *tmp = *pp;
             *pp = tmp->suivant;
-            if (tmp->taillesTab != NULL) {
-                free(tmp->taillesTab);
-            }
+            if (tmp->taillesTab) free(tmp->taillesTab);
             free(tmp->nom);
             free(tmp);
             return;
@@ -167,7 +179,7 @@ void supprimer(table_t *table, char *nom) {
 }
 
 /*
- * Supprimer une table de symbole et vide la mem alloué
+ * Libère toute une table
  */
 void detruire_table(table_t *table) {
     symbole_t *s = table->symbole;
@@ -181,8 +193,8 @@ void detruire_table(table_t *table) {
     free(table);
 }
 
-/* 
- * Renvoie la taille des differents types
+/*
+ * Taille d'un type
  */
 int taille_type(type_t type) {
     switch (type) {
@@ -191,21 +203,24 @@ int taille_type(type_t type) {
     }
 }
 
-void afficher_pile() {
+/*
+ * Affiche le contenu de la pile (debug)
+ */
+void afficher_pile(table_t *pile) {
     int profondeur = 0;
     for (table_t *t = pile; t != NULL; t = t->suivant) {
         printf("Table %d :\n", profondeur++);
         for (symbole_t *s = t->symbole; s != NULL; s = s->suivant) {
-            printf("\tNom: %s | Aritee: %d | Dim: %d\n", s->nom, s->nbParametresF, s->nbDimensionsTab);
+            printf("\tNom: %s | Aritée: %d\n", s->nom, s->aritee);
         }
     }
 }
 
 /*
- * libère la mémoire utilisé par la pile
+ * Libère la pile complète
  */
-void liberer_pile(){
-    while (pile != NULL) {
-        pop_table();
+void liberer_pile(table_t **pile) {
+    while (*pile != NULL) {
+        pop_table(pile);
     }
 }

@@ -1,16 +1,13 @@
 #ifndef TABLES_SYMBOLES_H
 #define TABLES_SYMBOLES_H
 
-
 typedef enum {INT_T, VOID_T} type_t;
 
 typedef struct _symbole_t {
     char *nom;
     int valeur;
-    int nbDimensionsTab;
-    int *taillesTab;
-    int estFonction;
-    int nbParametresF;
+    int aritee;             
+    int *taillesTab;        
     type_t type;
     struct _symbole_t *suivant;
 } symbole_t;
@@ -20,31 +17,27 @@ typedef struct _table_t {
     struct _table_t *suivant;
 } table_t;
 
-extern int incAppel;
-extern symbole_t listeAppelFonctions[100];
-/* Fonctions pour la gestion des tables/symboles */
-
-symbole_t* ajouter(table_t *table, char *nom, int nbParametresF, int nbDimensionsTab, int *taillesTab, type_t type, int estFonction);
-void declarer(char *nom, int nbParametresF, int nbDimensionsTab,int *taillesTab, type_t type,int estFonction);
-void verifier_declaration(char *nom);
-void verifier_dimensions(char *nom, int nbDemandees);
-void verifier_tailles(char *nom, int nbDemandees, int *taillesDemandees);
-
-void modifier_dimensions(char *nom,int nbDimensionsTab);
-void modifier_tailles(char *nom, int *newTailles);
-
+/* Fonctions pour la gestion des symboles dans une table */
+symbole_t* ajouter(table_t *table, char *nom, int aritee, int *taillesTab, type_t type);
 symbole_t* rechercher(table_t *table, char *nom);
 void supprimer(table_t *table, char *nom);
+void detruire_table(table_t *table);
 int taille_type(type_t type);
 
-/* Fonctions pour gérer la pile des tables de symboles */
+/* Fonctions de déclaration et de vérification */
+void declarer(table_t *pile, char *nom, int aritee, int *taillesTab, type_t type);
+void verifier_declaration(table_t *pile, char *nom);
+void verifier_dimensions(table_t *pile, char *nom, int nbDemandees);
+void verifier_tailles(table_t *pile, char *nom, int nbDemandees, int *taillesDemandees);
+void modifier_aritee(table_t *pile, char *nom, int nouvelleAritee);
+void modifier_tailles(table_t *pile, char *nom, int *newTailles);
 
-symbole_t* rechercher_dans_pile(char *nom);
-void push_table();
-void pop_table();
-table_t* top_table();
-void detruire_table(table_t *table);
-void afficher_pile();
-void liberer_pile();
+/* Fonctions pour la gestion de la pile */
+void push_table(table_t **pile);
+void pop_table(table_t **pile);
+table_t* top_table(table_t *pile);
+symbole_t* rechercher_dans_pile(table_t *pile, char *nom);
+void afficher_pile(table_t *pile);
+void liberer_pile(table_t **pile);
 
 #endif

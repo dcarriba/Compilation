@@ -23,10 +23,7 @@ tree_list *arbre_abstrait = NULL;
 
 table_t *pile_talbles = NULL;
 table_t *pile_tablesFonc = NULL;
-nodePile pileNode = {NULL};  
-exprPile pileExpr = {NULL};
-exprPile pileExprTab[100];
-int exprInc = 0;
+
 
 int n_erreur = 0;
 int n_warning = 0;
@@ -66,7 +63,7 @@ int yyerror(char *s){
 %type<arbre> fonction
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm
-%type<var> type binary_op binary_rel binary_comp
+%type<var> type binary_op binary_rel binary_comp liste_declarateurs declaration liste_declarations declarateur 
 
 
 %token<var> IDENTIFICATEUR
@@ -92,31 +89,43 @@ int yyerror(char *s){
 %%
 push : 
         { 
-            push_table();
+            push_table(&pile_talbles);
         }
 ;
 
 pop :
         { 
-            pop_table(); 
+            pop_table(&pile_talbles); 
+        }
+;
+
+pushf : 
+        { 
+            push_table(&pile_tablesFonc);
+        }
+;
+
+popf :
+        { 
+            pop_table(&pile_tablesFonc); 
         }
 ;
 
 programme:
-        push liste_declarations liste_fonctions pop
+        pushf push liste_declarations liste_fonctions pop popf
         {
-            arbre_abstrait = $3;
-            $$ = $3;
+            arbre_abstrait = $4;
+            $$ = $4;
         }
 ;
 
 liste_declarations:
         liste_declarations declaration
         {
-
+            $$=concat(2,$1,$2);
         }
     |   
-        {
+        { $$ = "";
 
         }
 ;
@@ -136,6 +145,10 @@ liste_fonctions:
 declaration:
         type liste_declarateurs ';'  
         {
+            if(is_void == 1){
+                yyerror("une déclaration ne peux pas etre de type void");
+            }
+            $$ = concat(4,$1," ",$2, ";\n");
 
         }
 ;
@@ -143,17 +156,20 @@ declaration:
 liste_declarateurs:
         liste_declarateurs ',' declarateur 
         {
-
+            $$ = concat(3,$1,",",$3);
         }
     |   declarateur 
         {
-
+            $$ = $1;
         }
 ;
 
 declarateur:
         IDENTIFICATEUR
         { 
+            declarer(pile_talbles, $1, nb_dim,tailles, INT_T);
+            nb_dim = 0;
+            $$ = $1;
             /*
             declarer($1, 0, nb_dim, tailles, INT_T, 0);
             */
@@ -162,14 +178,15 @@ declarateur:
         }
     |   declarateur '[' CONSTANTE ']' 
         { 
-            /*
+            
             nb_dim++;
             tailles = realloc(tailles, nb_dim * sizeof(int));  
             if (tailles == NULL) {
                 yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
             }
-            tailles[nb_dim - 1] = $3;   
-            */
+            tailles[nb_dim - 1] = (int)$3;
+            $$ = concat(4,$1,"[",$3,"]");
+            
 
         }
     |   
@@ -211,6 +228,12 @@ fonction:
             $$ = fonc ;
             */
 
+            if(is_void == 0 && has_return == 0){
+                warningError("Absence de return pour une fonction de type int");
+            } else if(is_int == 0 && has_return == 1){
+                warningError("Return present dans une fonction de type void");
+            }
+            has_return =0;
 
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
             char *label = (char *)malloc(len);
@@ -222,7 +245,8 @@ fonction:
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
         {
-
+        declarer(pile_tablesFonc, $3, n_param,NULL, INT_T);
+        n_param=0;
         }
 ;
 
@@ -267,6 +291,7 @@ l_parms :
 parm:
         INT IDENTIFICATEUR
         {
+            n_param++;
             $$ = create_node($2, "ellipse", "black", "solid", NULL);
         }
 ;
@@ -382,11 +407,15 @@ saut:
         }
     |   RETURN ';' 
         {
+            has_return = 0;
+
             node *n = create_node("RETURN", "trapezium", "blue", "solid", NULL);
             $$ = n;
         }
     |   RETURN expression ';' 
         {
+            has_return = 1;
+
             node_list *fils = create_node_list(1, $2);
             node *n = create_node("RETURN", "trapezium", "blue", "solid", fils);
             $$ = n;
@@ -395,7 +424,12 @@ saut:
 
 affectation:
         variable '=' expression 
-        {
+        {   
+        
+            symbole_t *s = rechercher_dans_pile(pile_talbles,$1->nom);
+            if (s == NULL){
+                warningError(concat(6,"affectation sur la variable ",$1->nom," qui n'est pas déclarer"));
+            }
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node(":=", "ellipse", "black", "solid", fils);
             $$ = n;
@@ -411,7 +445,14 @@ bloc:
 
 appel:
         IDENTIFICATEUR '(' liste_expressions ')' ';'
-        {
+        {   
+            symbole_t *a = rechercher_dans_pile(pile_tablesFonc, $1);
+            if (a == NULL){
+                warningError(concat(3,"Fonction ",$1," pas déclarer"));
+            }
+            if (a->aritee != length_of_node_list($3)){
+                warningError(concat(6,"Fonction ",$1,"a",length_of_node_list($3),"parametres au lieu de",a->aritee));
+            }
             node *n = create_node($1, "septagon", "black", "solid", $3);
             $$ = n;
         }
@@ -587,7 +628,8 @@ binary_comp:
 %%
 
 void finProgramme(){
-    liberer_pile();
+    liberer_pile(&pile_talbles);
+    liberer_pile(&pile_tablesFonc);
     yylex_destroy();
 }
 
