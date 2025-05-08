@@ -202,3 +202,40 @@ void print_node_recursive(node *n, int indent_level) {
 void print_node(node *n) {
     print_node_recursive(n, 0);
 }
+
+
+
+char *extraire_nom_base(node *var) {
+    if (!var) return NULL;
+    if (strcmp(var->label, "TAB") == 0 && var->fils && var->fils->item) {
+        return var->fils->item->label; 
+    }
+    return var->label;  
+}
+
+int get_nb_dimensions_utilisees(node *var) {
+    if (!var || strcmp(var->label, "TAB") != 0) return 0;
+    int count = 0;
+    node_list *cur = var->fils;
+    if (cur) cur = cur->suivant;  
+    while (cur) {
+        count++;
+        cur = cur->suivant;
+    }
+    return count;
+}
+
+int get_indice_dimension(node *var, int dim) {
+    if (!var || strcmp(var->label, "TAB") != 0) return -1;
+    node_list *cur = var->fils;
+    if (!cur) return -1;
+
+    cur = cur->suivant; 
+    for (int i = 0; i < dim && cur; i++) {
+        cur = cur->suivant;
+    }
+
+    if (!cur || !cur->item || !cur->item->label) return -1;
+    return atoi(cur->item->label);  
+}
+

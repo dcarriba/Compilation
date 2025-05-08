@@ -32,4 +32,9 @@ void destroy_node_list(node_list *nl);
 
 void print_node(node *n);
 
+char *extraire_nom_base(node *var);
+int get_indice_dimension(node *var, int dim);
+int get_nb_dimensions_utilisees(node *var);
+
+
 #endif

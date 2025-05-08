@@ -152,54 +152,53 @@ declaration:
 ;
 
 liste_declarateurs:
-        liste_declarateurs ',' declarateur 
-        {
-            //$$ = concat(3,$1,",",$3);
+    liste_declarateurs ',' declarateur
+    {
+        symbole_t *s = rechercher(pile_tables, $3);
+        if (s != NULL) {
+            char *war = concat(3, "La variable : ", $3, " a déjà été déclarée dans le même bloc");
+            warningError(war);
+            free(war);
         }
-    |   declarateur 
-        {
-            $$ = $1;
+        declarer(pile_tables, $3, nb_dim, tailles, INT_T);
+        free(tailles);
+        tailles = NULL;
+        nb_dim = 0;
+
+    }
+  | declarateur
+    {
+        symbole_t *s = rechercher(pile_tables, $1);
+        if (s != NULL) {
+            char *war = concat(3, "La variable : ", $1, " a déjà été déclarée dans le même bloc");
+            warningError(war);
+            free(war);
         }
+        declarer(pile_tables, $1, nb_dim, tailles, INT_T);
+        free(tailles);
+        tailles = NULL;
+        nb_dim = 0;
+
+        $$ = $1;
+    }
 ;
 
+
 declarateur:
-        IDENTIFICATEUR
-        {   
-            symbole_t *s = rechercher(pile_tables,$1);
-            if (s != NULL){
-                char *war = concat(3,"La varible : ",$1," a déjà été déclarer dans le meme bloc");
-                warningError(war);
-                free(war);
-            }
-            declarer(pile_tables, $1, nb_dim,tailles, INT_T);
-            free(tailles);
-            tailles = NULL;
-            
-            nb_dim = 0;
-            $$ = $1;
-            /*
-            declarer($1, 0, nb_dim, tailles, INT_T, 0);
-            */
-
-
+    IDENTIFICATEUR
+    {
+        $$ = strdup($1);  
+    }
+|   declarateur '[' CONSTANTE ']'
+    {
+        nb_dim++;
+        tailles = realloc(tailles, nb_dim * sizeof(int));
+        if (!tailles) {
+            yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
         }
-    |   declarateur '[' CONSTANTE ']' 
-        { 
-            
-            nb_dim++;
-            tailles = realloc(tailles, nb_dim * sizeof(int));  
-            if (tailles == NULL) {
-                yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
-            }
-            tailles[nb_dim - 1] = atoi($3);
-            //$$ = concat(4,$1,"[",$3,"]");
-            
-
-        }
-    |   
-        {
-
-        }
+        tailles[nb_dim - 1] = atoi($3);
+        $$ = $1;  
+    }
 ;
 
 fonction:
@@ -449,33 +448,29 @@ saut:
 affectation:
         variable '=' expression 
         {   
-            char *nom_base = extraire_nom_base($1->label);
-            symbole_t *s = rechercher_dans_pile(pile_tables, nom_base);
-
-            if (s == NULL) {
-                char *err = concat(3, "Affectation sur la variable ", nom_base, " qui n'est pas déclarée");
+            symbole_t *s = rechercher_dans_pile(pile_tables, extraire_nom_base($1));
+            if (!s) {
+                char *err = concat(3, "Variable non déclarée : ", extraire_nom_base($1), "\n");
                 warningError(err);
                 free(err);
             } else {
-                int nb_dims_utilisees = get_nb_dimensions_utilisees($1->label);
-                if (nb_dims_utilisees != s->aritee) {
-                    char *err = concat(3, "Nombre de dimensions incorrect pour ", nom_base);
+                int nb_dim_util = get_nb_dimensions_utilisees($1);
+                if (nb_dim_util != s->aritee) {
+                    char *err = concat(5, "Variable de dimension : ", itoa(nb_dim_util),"au lieu de ",itoa(s->aritee), "\n");
                     warningError(err);
                     free(err);
-                } else {
-                    for (int i = 0; i < s->aritee; i++) {
-                        int index = get_indice_dimension($1->label, i);
-                        if (index >= s->taillesTab[i]) {
-                            char *err = concat(5, "Indice ", itoa(index), " hors limite pour la dimension ", itoa(i), " de ", nom_base);
+                } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
+                    for (int i = 0; i < nb_dim_util; i++) {
+                        int indice = get_indice_dimension($1, i);
+                        if (indice >= s->taillesTab[i]) {
+                            char *err = concat(7, "Accés a l'indice : ", itoa(indice)," sort de la taille déclarer ",itoa(s->taillesTab[i])," a la dimension : ",itoa(i+1) ,"\n");
                             warningError(err);
                             free(err);
-                            break;
                         }
                     }
                 }
             }
 
-            free(nom_base);
         
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node(":=", "ellipse", "black", "solid", fils);
