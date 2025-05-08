@@ -19,7 +19,7 @@ int yylex_destroy();
 /* Arbre Syntaxique Abstrait du programme */
 tree_list *arbre_abstrait = NULL;
 
-table_t *pile_talbles = NULL;
+table_t *pile_tables = NULL;
 table_t *pile_tablesFonc = NULL;
 
 
@@ -87,13 +87,13 @@ int yyerror(char *s){
 %%
 push : 
         { 
-            push_table(&pile_talbles);
+            push_table(&pile_tables);
         }
 ;
 
 pop :
         { 
-            pop_table(&pile_talbles); 
+            pop_table(&pile_tables); 
         }
 ;
 
@@ -164,8 +164,14 @@ liste_declarateurs:
 
 declarateur:
         IDENTIFICATEUR
-        { 
-            declarer(pile_talbles, $1, nb_dim,tailles, INT_T);
+        {   
+            symbole_t *s = rechercher(pile_tables,$1);
+            if (s != NULL){
+                char *war = concat(3,"La varible : ",$1," a déjà été déclarer dans le meme bloc");
+                warningError(war);
+                free(war);
+            }
+            declarer(pile_tables, $1, nb_dim,tailles, INT_T);
             free(tailles);
             tailles = NULL;
             
@@ -443,14 +449,34 @@ saut:
 affectation:
         variable '=' expression 
         {   
-        
-            symbole_t *s = rechercher_dans_pile(pile_talbles,$1->label);
-            if (s == NULL){
-                /* Attention met le label TAB pour les variables qui sont des tableaux */
-                char *err = concat(3, "Affectation sur la variable ", $1->label, " qui n'est pas déclaré");
+            char *nom_base = extraire_nom_base($1->label);
+            symbole_t *s = rechercher_dans_pile(pile_tables, nom_base);
+
+            if (s == NULL) {
+                char *err = concat(3, "Affectation sur la variable ", nom_base, " qui n'est pas déclarée");
                 warningError(err);
                 free(err);
+            } else {
+                int nb_dims_utilisees = get_nb_dimensions_utilisees($1->label);
+                if (nb_dims_utilisees != s->aritee) {
+                    char *err = concat(3, "Nombre de dimensions incorrect pour ", nom_base);
+                    warningError(err);
+                    free(err);
+                } else {
+                    for (int i = 0; i < s->aritee; i++) {
+                        int index = get_indice_dimension($1->label, i);
+                        if (index >= s->taillesTab[i]) {
+                            char *err = concat(5, "Indice ", itoa(index), " hors limite pour la dimension ", itoa(i), " de ", nom_base);
+                            warningError(err);
+                            free(err);
+                            break;
+                        }
+                    }
+                }
             }
+
+            free(nom_base);
+        
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node(":=", "ellipse", "black", "solid", fils);
             $$ = n;
@@ -670,7 +696,7 @@ binary_comp:
 %%
 
 void finProgramme(){
-    liberer_pile(&pile_talbles);
+    liberer_pile(&pile_tables);
     liberer_pile(&pile_tablesFonc);
     yylex_destroy();
     if (tailles != NULL) {

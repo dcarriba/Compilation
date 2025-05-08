@@ -43,3 +43,60 @@ char *concat(int nbArgs, ...) {
 
     return result;
 }
+
+char *extraire_nom_base(const char *label) {
+    const char *crochet = strchr(label, '[');
+    size_t len = (crochet != NULL) ? (size_t)(crochet - label) : strlen(label);
+
+    char *base = malloc(len + 1);
+    if (!base) {
+        fprintf(stderr, "Erreur : échec d'allocation dans extraire_nom_base\n");
+        return NULL;
+    }
+
+    strncpy(base, label, len);
+    base[len] = '\0';
+    return base;
+}
+
+int get_nb_dimensions_utilisees(const char *label) {
+    int count = 0;
+    while ((label = strchr(label, '[')) != NULL) {
+        count++;
+        label++;
+    }
+    return count;
+}
+
+int get_indice_dimension(const char *label, int i) {
+    int current_dim = 0;
+    const char *ptr = label;
+
+    while ((ptr = strchr(ptr, '[')) != NULL) {
+        ptr++; 
+        if (current_dim == i) {
+            const char *end = strchr(ptr, ']');
+            if (!end) {
+                fprintf(stderr, "Erreur : crochet fermant manquant dans get_indice_dimension\n");
+                return -1;
+            }
+
+            char buffer[32];
+            size_t len = end - ptr;
+            if (len >= sizeof(buffer)) {
+                fprintf(stderr, "Erreur : indice trop long dans get_indice_dimension\n");
+                return -1;
+            }
+
+            strncpy(buffer, ptr, len);
+            buffer[len] = '\0';
+            return atoi(buffer);
+        }
+        current_dim++;
+        ptr++; 
+    }
+
+    fprintf(stderr, "Erreur : dimension %d non trouvée dans get_indice_dimension\n", i);
+    return -1;
+}
+
