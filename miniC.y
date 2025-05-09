@@ -186,7 +186,7 @@ liste_declarateurs:
 declarateur:
     IDENTIFICATEUR
     {
-        $$ = strdup($1);  
+        $$ = $1;
     }
 |   declarateur '[' CONSTANTE ']'
     {
@@ -196,7 +196,8 @@ declarateur:
             yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
         }
         tailles[nb_dim - 1] = atoi($3);
-        $$ = $1;  
+        free($3);
+        $$ = $1;
     }
 ;
 
@@ -248,11 +249,13 @@ fonction:
             free(label);
             tree *t = create_tree(fonction);
             $$ = t;
+            free($2);
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
         {
-        declarer(pile_tablesFonc, $3, n_param,NULL, INT_T);
-        n_param=0;
+            declarer(pile_tablesFonc, $3, n_param,NULL, INT_T);
+            n_param=0;
+            free($3);
         }
 ;
 
@@ -299,6 +302,7 @@ parm:
         {
             n_param++;
             $$ = create_node($2, "ellipse", "black", "solid", NULL);
+            free($2);
         }
 ;
 
@@ -413,6 +417,7 @@ switch_case:
             $$ = n;
 
             free(label);
+            free($2);
         }
     |   DEFAULT ':' liste_instructions
         {
@@ -514,6 +519,7 @@ appel:
             }
             node *n = create_node($1, "septagon", "black", "solid", $3);
             $$ = n;
+            free($1);
         }
 ;
 
@@ -522,6 +528,7 @@ variable:
         {
             node *n = create_node($1, "ellipse", "black", "solid", NULL);
             $$ = n;
+            free($1);
         }
     |   tableau 
         {
@@ -536,6 +543,7 @@ tableau:
             node *n = create_node($1, "ellipse", "black", "solid", NULL);
             node_list *nl = create_node_list(2, n, $3);
             $$ = nl;
+            free($1);
         }
     |   tableau '[' expression ']'
         {
@@ -554,6 +562,7 @@ expression:
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node($2, "ellipse", "black", "solid", fils);
             $$ = n;
+            free($2);
         }
     |   MOINS expression 
         {
@@ -565,6 +574,7 @@ expression:
         {
             node *n = create_node($1, "ellipse", "black", "solid", NULL);
             $$ = n;
+            free($1);
         }
     |   variable 
         {
@@ -574,6 +584,7 @@ expression:
         {
             node *n = create_node($1, "septagon", "black", "solid", $3);
             $$ = n;
+            free($1);
         }
 ;
 
