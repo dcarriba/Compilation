@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic
+# -fsanitize=address (option gcc pour voir les fuites mémoires)
 LEX = flex
 YACC = bison
 EXECUTABLE = compilateur

@@ -22,7 +22,6 @@ tree_list *arbre_abstrait = NULL;
 table_t *pile_tables = NULL;
 table_t *pile_tablesFonc = NULL;
 
-
 int n_erreur = 0;
 int n_warning = 0;
 int n_param = 0;
@@ -43,7 +42,7 @@ void warningError(char *s){
 int yyerror(char *s){
     fprintf(stderr, COLOR_RED "[Error] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
     n_erreur++;
-    exit(1);
+    return 1;
 }
 
 %}
@@ -123,8 +122,8 @@ liste_declarations:
             //$$=concat(2,$1,$2);
         }
     |   
-        { $$ = "";
-
+        { 
+            $$ = "";
         }
 ;
 
@@ -152,35 +151,35 @@ declaration:
 ;
 
 liste_declarateurs:
-    liste_declarateurs ',' declarateur
-    {
-        symbole_t *s = rechercher(pile_tables, $3);
-        if (s != NULL) {
-            char *war = concat(3, "La variable : ", $3, " a déjà été déclarée dans le même bloc");
-            warningError(war);
-            free(war);
-        }
-        declarer(pile_tables, $3, nb_dim, tailles, INT_T);
-        free(tailles);
-        tailles = NULL;
-        nb_dim = 0;
+        liste_declarateurs ',' declarateur
+        {
+            symbole_t *s = rechercher(pile_tables, $3);
+            if (s != NULL) {
+                char *war = concat(3, "La variable : ", $3, " a déjà été déclarée dans le même bloc");
+                warningError(war);
+                free(war);
+            }
+            declarer(pile_tables, $3, nb_dim, tailles, INT_T);
+            free(tailles);
+            tailles = NULL;
+            nb_dim = 0;
 
-    }
-  | declarateur
-    {
-        symbole_t *s = rechercher(pile_tables, $1);
-        if (s != NULL) {
-            char *war = concat(3, "La variable : ", $1, " a déjà été déclarée dans le même bloc");
-            warningError(war);
-            free(war);
         }
-        declarer(pile_tables, $1, nb_dim, tailles, INT_T);
-        free(tailles);
-        tailles = NULL;
-        nb_dim = 0;
+    |   declarateur
+        {
+            symbole_t *s = rechercher(pile_tables, $1);
+            if (s != NULL) {
+                char *war = concat(3, "La variable : ", $1, " a déjà été déclarée dans le même bloc");
+                warningError(war);
+                free(war);
+            }
+            declarer(pile_tables, $1, nb_dim, tailles, INT_T);
+            free(tailles);
+            tailles = NULL;
+            nb_dim = 0;
 
-        $$ = $1;
-    }
+            $$ = $1;
+        }
 ;
 
 
@@ -456,14 +455,24 @@ affectation:
             } else {
                 int nb_dim_util = get_nb_dimensions_utilisees($1);
                 if (nb_dim_util != s->aritee) {
-                    char *err = concat(5, "Variable de dimension : ", itoa(nb_dim_util),"au lieu de ",itoa(s->aritee), "\n");
+                    char *nb_dim_util_str = itoa(nb_dim_util);
+                    char *s_aritee_str = itoa(s->aritee);
+                    char *err = concat(5, "Variable de dimension : ", nb_dim_util_str,"au lieu de ", s_aritee_str, "\n");
+                    free(nb_dim_util_str);
+                    free(s_aritee_str);
                     warningError(err);
                     free(err);
                 } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
                     for (int i = 0; i < nb_dim_util; i++) {
                         int indice = get_indice_dimension($1, i);
                         if (indice >= s->taillesTab[i]) {
-                            char *err = concat(7, "Accés a l'indice : ", itoa(indice)," sort de la taille déclarer ",itoa(s->taillesTab[i])," a la dimension : ",itoa(i+1) ,"\n");
+                            char *incice_str = itoa(indice);
+                            char *s_taillesTab_str = itoa(s->taillesTab[i]);
+                            char *i_plus_1_str = itoa(i+1);
+                            char *err = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            free(incice_str);
+                            free(s_taillesTab_str);
+                            free(i_plus_1_str);
                             warningError(err);
                             free(err);
                         }
@@ -694,10 +703,8 @@ void finProgramme(){
     liberer_pile(&pile_tables);
     liberer_pile(&pile_tablesFonc);
     yylex_destroy();
-    if (tailles != NULL) {
-        free(tailles);
-        tailles = NULL;
-    }
+    if (arbre_abstrait) destroy_tree_list(arbre_abstrait);
+    if (tailles) free(tailles);
 }
 
 int main(int argc, char* argv[]){
@@ -723,25 +730,23 @@ int main(int argc, char* argv[]){
         return 3;
     }
 
-    yyparse();
-    if (fichier != NULL) {
-        fclose(fichier);  
-    }
-    if (n_erreur > 0) {
-        printf(COLOR_RED "[Error] Erreur lors de l'analyse lexicale, syntaxique ou sémantique" COLOR_RESET);
+    if (yyparse() != 0) {
+        fprintf(stderr, COLOR_RED "[Error] Erreur lors de l'analyse lexicale, syntaxique ou sémantique\n" COLOR_RESET);
+        if (fichier) fclose(fichier);
         return 1;
     }
+
+    if (fichier) fclose(fichier);
+
     printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! - Construction de l'arbre syntaxique sans erreurs\n" COLOR_RESET);
-    /* print_tree_list(arbre_abstrait); */
     
     char *nom_fichier_dot = strdup(nom_fichier);
+
     char *point = strrchr(nom_fichier_dot, '.'); /* pointe vers le . du .c a la fin du nom du fichier */
-    if (point) {
-        *point = '\0'; /* on enlève le .c à la fin du nom du fichier */
-    }
+    if (point) *point = '\0'; /* on enlève le .c à la fin du nom du fichier */
+
     convert_to_dot(arbre_abstrait, nom_fichier_dot);
     free(nom_fichier_dot);
 
-    destroy_tree_list(arbre_abstrait);
     return 0;
 }
