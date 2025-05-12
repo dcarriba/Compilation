@@ -16,7 +16,7 @@ int yylex();
 int yyerror();
 int yylex_destroy();
 
-/* Arbre Syntaxique Abstrait du programme */
+/* Arbre Abstrait du programme */
 tree_list *arbre_abstrait = NULL;
 
 table_t *pile_tables = NULL;

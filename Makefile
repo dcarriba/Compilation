@@ -115,9 +115,9 @@ valgrind-run: $(EXECUTABLE)
 		echo ""; \
 	done
 
-# Règle pour compiler avec l'option -g de gcc afin de pouvoir débugger avec gdb
-gdb: CFLAGS += -g
-gdb: $(EXECUTABLE)
+# Règle pour compiler avec l'option -g de gcc afin de pouvoir débugger
+debug: CFLAGS += -g
+debug: $(EXECUTABLE)
 
 # Règle pour supprimer l'exécutable et tous les fichiers intermédiaires
 clean:

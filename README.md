@@ -1,6 +1,8 @@
 # Projet Compilation
 
-Projet pour l'UE Compilation du S6 de la Licence Informatique de l'Université Côte d'Azur
+Compilateur d'un langage miniC.
+
+Projet pour l'UE Compilation du Semestre 6 de la Licence Informatique de l'Université Côte d'Azur.
 
 ## Auteurs
 
@@ -29,22 +31,22 @@ make
 ### Exécuter
 
 ```bash
-./compilateur <fichier>
+./compilateur <fichier>.c
 ```
 
 Le compilateur va générer `<fichier>.dot` si le fichier à été compilé sans erreurs.
 
 ### Compiler et exécuter sur tous les fichiers tests
 
-Compile et exécute `./compilateur` sur tous les fichiers tests (exempleminiC.c et Tests/*.c).
-
-Génère l'image `.png` de chaque fichier `.dot` généré. 
-
 ```bash
 make run
 ```
 
-Dépendance : la commande `dot` est requise. Pour l'installer utilisez la commande suivante :
+Compile et exécute `./compilateur` sur tous les fichiers tests (exempleminiC.c et Tests/*.c).
+
+Génère l'image `.png` de chaque fichier `.dot` généré. 
+
+Dépendance : `dot` est requis. Pour l'installer utilisez la commande suivante :
 
 ```bash
 sudo apt-get install graphviz
@@ -52,21 +54,21 @@ sudo apt-get install graphviz
 
 ### Nettoyer
 
-Supprime l'exécutable ainsi que les fichiers `.dot` et `.png` généré auparavant.
-
 ```bash
 make clean
 ```
 
+Supprime l'exécutable ainsi que les fichiers `.dot` et `.png` généré auparavant.
+
 ### Compiler et exécuter avec `valgrind` sur tous les fichiers tests
-
-Compile et exécute `valgrind ./compilateur` sur tous les fichiers tests (exempleminiC.c et Tests/*.c).
-
-Génère l'image `.png` de chaque fichier `.dot` généré.
 
 ```bash
 make valgrind-run
 ```
+
+Compile et exécute `valgrind ./compilateur` sur tous les fichiers tests (exempleminiC.c et Tests/*.c).
+
+Génère l'image `.png` de chaque fichier `.dot` généré.
 
 Dépendance : `valgrind` et `dot` sont requis. Pour les installer utilisez les commandes suivantes :
 
@@ -75,16 +77,10 @@ sudo apt-get install valgrind
 sudo apt-get install graphviz
 ```
 
-### Compiler pour pouvoir débugger avec `gdb`
+### Compiler pour pouvoir débugger
 
 ```bash
-make gdb
+make debug
 ```
 
-ensuite utiliser `gdb` :
-
-```bash
-gdb compilateur
-```
-
-Pour plus d'informations comment installer et utiliser la commande `gdb` [cliquez ici](https://www.gdbtutorial.com/) 
+Compile avec l'option `-g` de `gcc` pour pouvoir débugger.
