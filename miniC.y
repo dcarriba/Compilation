@@ -749,7 +749,7 @@ int main(int argc, char* argv[]){
 
     if (fichier) fclose(fichier);
 
-    printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! - Construction de l'arbre syntaxique sans erreurs\n" COLOR_RESET);
+    printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! Construction de l'arbre abstrait sans erreurs.\n" COLOR_RESET);
     
     char *nom_fichier_dot = strdup(nom_fichier);
 
