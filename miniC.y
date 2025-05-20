@@ -62,7 +62,7 @@ int yyerror(char *s){
 %type<arbre> fonction
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
-%type<var> type binary_op binary_rel binary_comp declarateur identfonction declarationfonction
+%type<var> type binary_op binary_rel binary_comp declarateur declarationfonction
 
 
 %token<var> IDENTIFICATEUR
@@ -199,43 +199,36 @@ declarateur:
             $$ = $1;
         }
 ;
-identfonction:
-        IDENTIFICATEUR
-        {
-            $$=$1;
-        }
-declarationfonction : 
-    type IDENTIFICATEUR '(' push liste_parms ')'
-    {
-        if(is_int==1){
-            declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, INT_T);
-        }
-        else{
-            declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, VOID_T);
 
-        }
+declarationfonction : 
+        type IDENTIFICATEUR '(' push liste_parms ')'
+        {
+            if (is_int==1) {
+                declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, INT_T);
+            } else {
+                declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, VOID_T);
+            }
+
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
             char *label = malloc(len);
             snprintf(label, len, "%s, %s", $2, $1);
+
             free($2);
             destroy_node_list($5);
 
             $$ = label;
-
-    }
+        }
 
 fonction:
         declarationfonction '{' liste_declarations liste_instructions pop'}' 
         {
-            if(is_void == 0 && has_return == 0){
+            if (is_void == 0 && has_return == 0) {
                 warningError("Absence de return pour une fonction de type int");
-            } else if(is_int == 0 && has_return == 1){
+            } else if (is_int == 0 && has_return == 1) {
                 warningError("Return present dans une fonction de type void");
             }
 
             has_return = 0;
-
-
 
             node *bloc= create_node("BLOC", "ellipse", "black", "solid", $4);
 
@@ -243,8 +236,6 @@ fonction:
             free($1);
 
             tree *t = create_tree(fonction);
-
-
             $$ = t;
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
