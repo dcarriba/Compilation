@@ -291,7 +291,8 @@ l_parms :
 
 parm:
         INT IDENTIFICATEUR
-        {
+        {   
+            declarer(pile_tables, $2, nb_dim, tailles, INT_T);
             n_param++;
             node *n = create_node($2, "ellipse", "black", "solid", NULL);
             free($2);
@@ -570,7 +571,39 @@ expression:
             $$ = n;
         }
     |   variable 
-        {
+        {   
+            symbole_t *s = rechercher_dans_pile(pile_tables, extraire_nom_base($1));
+            if (!s) {
+                char *err = concat(3, "Variable non déclarée : ", extraire_nom_base($1), "\n");
+                warningError(err);
+                free(err);
+            } else {
+                int nb_dim_util = get_nb_dimensions_utilisees($1);
+                if (nb_dim_util != s->aritee) {
+                    char *nb_dim_util_str = itoa(nb_dim_util);
+                    char *s_aritee_str = itoa(s->aritee);
+                    char *err = concat(5, "Variable de dimension : ", nb_dim_util_str,"au lieu de ", s_aritee_str, "\n");
+                    free(nb_dim_util_str);
+                    free(s_aritee_str);
+                    warningError(err);
+                    free(err);
+                } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
+                    for (int i = 0; i < nb_dim_util; i++) {
+                        int indice = get_indice_dimension($1, i);
+                        if (indice >= s->taillesTab[i]|| indice < 0) {
+                            char *incice_str = itoa(indice);
+                            char *s_taillesTab_str = itoa(s->taillesTab[i]);
+                            char *i_plus_1_str = itoa(i+1);
+                            char *err = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            free(incice_str);
+                            free(s_taillesTab_str);
+                            free(i_plus_1_str);
+                            warningError(err);
+                            free(err);
+                        }
+                    }
+                }
+            }
             $$ = $1;
         }
     |   IDENTIFICATEUR '(' liste_expressions ')' 
