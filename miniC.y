@@ -30,6 +30,7 @@ int is_int = 0;
 int is_switch = 0;
 int has_return = 0;
 
+
 int nb_dim = 0;
 int *tailles;
 int nb_aritee = 0;
@@ -61,7 +62,7 @@ int yyerror(char *s){
 %type<arbre> fonction
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
-%type<var> type binary_op binary_rel binary_comp declarateur 
+%type<var> type binary_op binary_rel binary_comp declarateur identfonction declarationfonction
 
 
 %token<var> IDENTIFICATEUR
@@ -198,30 +199,51 @@ declarateur:
             $$ = $1;
         }
 ;
+identfonction:
+        IDENTIFICATEUR
+        {
+            $$=$1;
+        }
+declarationfonction : 
+    type IDENTIFICATEUR '(' push liste_parms ')'
+    {
+        if(is_int==1){
+            declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, INT_T);
+        }
+        else{
+            declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, VOID_T);
+
+        }
+            int len = strlen($1) + strlen(", ") + strlen($2) + 1;
+            char *label = malloc(len);
+            snprintf(label, len, "%s, %s", $2, $1);
+            free($2);
+            destroy_node_list($5);
+
+            $$ = label;
+
+    }
 
 fonction:
-        type IDENTIFICATEUR '(' push liste_parms ')' '{' liste_declarations liste_instructions pop'}' 
+        declarationfonction '{' liste_declarations liste_instructions pop'}' 
         {
             if(is_void == 0 && has_return == 0){
                 warningError("Absence de return pour une fonction de type int");
             } else if(is_int == 0 && has_return == 1){
                 warningError("Return present dans une fonction de type void");
             }
+
             has_return = 0;
 
-            int len = strlen($1) + strlen(", ") + strlen($2) + 1;
-            char *label = malloc(len);
-            snprintf(label, len, "%s, %s", $2, $1);
 
-            node *bloc= create_node("BLOC", "ellipse", "black", "solid", $9);
 
-            node *fonction = create_node(label, "invtrapezium", "blue", "solid", create_node_list(1, bloc));
-            free(label);
+            node *bloc= create_node("BLOC", "ellipse", "black", "solid", $4);
+
+            node *fonction = create_node($1, "invtrapezium", "blue", "solid", create_node_list(1, bloc));
+            free($1);
 
             tree *t = create_tree(fonction);
 
-            free($2);
-            destroy_node_list($5);
 
             $$ = t;
         }
@@ -450,7 +472,7 @@ affectation:
                 } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
                     for (int i = 0; i < nb_dim_util; i++) {
                         int indice = get_indice_dimension($1, i);
-                        if (indice >= s->taillesTab[i]) {
+                        if (indice >= s->taillesTab[i]|| indice < 0) {
                             char *incice_str = itoa(indice);
                             char *s_taillesTab_str = itoa(s->taillesTab[i]);
                             char *i_plus_1_str = itoa(i+1);
@@ -561,7 +583,32 @@ expression:
             $$ = $1;
         }
     |   IDENTIFICATEUR '(' liste_expressions ')' 
-        {
+        {   
+            symbole_t *a = rechercher_dans_pile(pile_tablesFonc, $1);
+            if (a == NULL){
+                char *war = concat(3,"Fonction ",$1," pas déclarer");
+                warningError(war);
+                free(war);
+            }
+            else{
+                if (a->type != INT_T){
+                char *war = concat(3,"Fonction ",$1,"n'est pas du type int");
+                warningError(war);
+                free(war);
+                }
+                if (a->aritee != length_of_node_list($3)){
+                char *aritee = itoa(a->aritee);
+                char *len = itoa(length_of_node_list($3));
+                char *war = concat(4,"Fonction appelé avec ",len," parametres au lieu de",aritee);
+                warningError(war);
+                free(len);
+                free(aritee);
+                free(war);
+                }
+                
+
+            }
+
             node *n = create_node($1, "septagon", "black", "solid", $3);
             free($1);
             $$ = n;
