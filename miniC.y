@@ -576,28 +576,25 @@ expression:
     |   IDENTIFICATEUR '(' liste_expressions ')' 
         {   
             symbole_t *a = rechercher_dans_pile(pile_tablesFonc, $1);
-            if (a == NULL){
-                char *war = concat(3,"Fonction ",$1," pas déclarer");
+            if (a == NULL) {
+                char *war = concat(3, "Fonction ", $1, " pas déclarer");
                 warningError(war);
                 free(war);
-            }
-            else{
-                if (a->type != INT_T){
-                char *war = concat(3,"Fonction ",$1,"n'est pas du type int");
-                warningError(war);
-                free(war);
+            } else {
+                if (a->type != INT_T) {
+                    char *war = concat(3, "Fonction ", $1, " n'est pas de type int");
+                    warningError(war);
+                    free(war);
                 }
-                if (a->aritee != length_of_node_list($3)){
-                char *aritee = itoa(a->aritee);
-                char *len = itoa(length_of_node_list($3));
-                char *war = concat(4,"Fonction appelé avec ",len," parametres au lieu de",aritee);
-                warningError(war);
-                free(len);
-                free(aritee);
-                free(war);
+                if (a->aritee != length_of_node_list($3)) {
+                    char *aritee = itoa(a->aritee);
+                    char *len = itoa(length_of_node_list($3));
+                    char *war = concat(4, "Fonction appelé avec ", len, " parametres au lieu de ", aritee);
+                    warningError(war);
+                    free(len);
+                    free(aritee);
+                    free(war);
                 }
-                
-
             }
 
             node *n = create_node($1, "septagon", "black", "solid", $3);
