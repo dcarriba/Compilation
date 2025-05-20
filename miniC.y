@@ -49,6 +49,7 @@ int yyerror(char *s){
 
 %union {
     char *var;
+    int ival;
     node *noeud;
     node_list *liste_noeuds;
     tree *arbre;
@@ -60,11 +61,11 @@ int yyerror(char *s){
 %type<arbre> fonction
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
-%type<var> type binary_op binary_rel binary_comp liste_declarateurs declaration liste_declarations declarateur 
+%type<var> type binary_op binary_rel binary_comp declarateur 
 
 
 %token<var> IDENTIFICATEUR
-%token<var> CONSTANTE
+%token<ival> CONSTANTE
 %token<var> VOID INT
 %token FOR WHILE IF ELSE SWITCH CASE DEFAULT
 %token BREAK RETURN
@@ -119,18 +120,19 @@ programme:
 liste_declarations:
         liste_declarations declaration
         {
-            //$$=concat(2,$1,$2);
+
         }
     |   
         { 
-            $$ = "";
+
         }
 ;
 
 liste_fonctions:
         liste_fonctions fonction
         {
-            $$ = add_tree_to_list($1, $2);
+            tree_list *tl = add_tree_to_list($1, $2);
+            $$ = tl;
         }
     |   fonction
         {
@@ -145,8 +147,6 @@ declaration:
             if(is_void == 1){
                 yyerror("une déclaration ne peux pas etre de type void");
             }
-            //$$ = concat(4,$1," ",$2, ";\n");
-
         }
 ;
 
@@ -163,7 +163,7 @@ liste_declarateurs:
             free(tailles);
             tailles = NULL;
             nb_dim = 0;
-
+            free($3);
         }
     |   declarateur
         {
@@ -177,85 +177,64 @@ liste_declarateurs:
             free(tailles);
             tailles = NULL;
             nb_dim = 0;
-
-            $$ = $1;
+            free($1);
         }
 ;
 
 
 declarateur:
-    IDENTIFICATEUR
-    {
-        $$ = $1;
-    }
-|   declarateur '[' CONSTANTE ']'
-    {
-        nb_dim++;
-        tailles = realloc(tailles, nb_dim * sizeof(int));
-        if (!tailles) {
-            yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
+        IDENTIFICATEUR
+        {
+            $$ = $1;
         }
-        tailles[nb_dim - 1] = atoi($3);
-        free($3);
-        $$ = $1;
-    }
+    |   declarateur '[' CONSTANTE ']'
+        {
+            nb_dim++;
+            tailles = realloc(tailles, nb_dim * sizeof(int));
+            if (!tailles) {
+                yyerror("Erreur de réallocation de mémoire pour les tailles du tableau");
+            }
+            tailles[nb_dim - 1] = $3;
+            $$ = $1;
+        }
 ;
 
 fonction:
         type IDENTIFICATEUR '(' push liste_parms ')' '{' liste_declarations liste_instructions pop'}' 
         {
-            /*
-            $$ = $2;
-            int i = 0;
-            while(i < incAppel){
-                symbole_t sym = listeAppelFonctions[i];
-                symbole_t *s =  rechercher_dans_pile(sym.nom);
-                verifier_declaration(sym.nom);
-                if(sym.nbParametresF != s->nbParametresF){
-                    yyerror("Nombre de paramètre");
-                    printf("La fonction %s doit avoir %d parametres, ici il y en a %d \n",sym.nom,s->nbParametresF,sym.nbParametresF);
-                }
-                i++;
-            }
-            n_param = 0;
-            incAppel = 0;
             if(is_void == 0 && has_return == 0){
                 warningError("Absence de return pour une fonction de type int");
             } else if(is_int == 0 && has_return == 1){
                 warningError("Return present dans une fonction de type void");
             }
             has_return = 0;
-            char *bloc = nodeName();
-            char *fonc = $2;
-            char *fonctionLabel = concat(3,$2,",",$1);
-            exprLienEntreParentEtNom(&pileNode,&pileExprTab[exprInc--] , bloc);
-            nodeEmpiler(&pileNode,bloc,"BLOC",6,fonc);
-            nodeEmpiler(&pileNode,fonc,fonctionLabel,1,"");
-            $$ = fonc ;
-            */
-
-            if(is_void == 0 && has_return == 0){
-                warningError("Absence de return pour une fonction de type int");
-            } else if(is_int == 0 && has_return == 1){
-                warningError("Return present dans une fonction de type void");
-            }
-            has_return =0;
 
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
-            char *label = (char *)malloc(len);
+            char *label = malloc(len);
             snprintf(label, len, "%s, %s", $2, $1);
+
             node *bloc= create_node("BLOC", "ellipse", "black", "solid", $9);
+
             node *fonction = create_node(label, "invtrapezium", "blue", "solid", create_node_list(1, bloc));
             free(label);
+
             tree *t = create_tree(fonction);
-            $$ = t;
+
             free($2);
+            destroy_node_list($5);
+
+            $$ = t;
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
         {
             declarer(pile_tablesFonc, $3, n_param,NULL, INT_T);
+            
             n_param=0;
+
             free($3);
+            destroy_node_list($5);
+            
+            $$ = NULL;
         }
 ;
 
@@ -282,7 +261,7 @@ liste_parms:
         }
     |
         {
-            $$ = new_empty_node_list();
+            $$ = NULL;
         }
 ;
 
@@ -301,8 +280,9 @@ parm:
         INT IDENTIFICATEUR
         {
             n_param++;
-            $$ = create_node($2, "ellipse", "black", "solid", NULL);
+            node *n = create_node($2, "ellipse", "black", "solid", NULL);
             free($2);
+            $$ = n;
         }
 ;
 
@@ -311,7 +291,6 @@ liste_instructions :
         {
             $$ = $1;
         }
-        
     |
         {
             $$ = NULL;
@@ -409,15 +388,16 @@ liste_switch_case:
 switch_case:
         CASE CONSTANTE ':' liste_instructions
         {
-            int len = strlen("case ") + strlen($2) + 1;
-            char *label = (char *)malloc(len);
-            snprintf(label, len, "case %s", $2);
+            char *case_num = itoa($2);
+            int len = strlen("case ") + strlen(case_num) + 1;
+
+            char *label = malloc(len);
+            snprintf(label, len, "case %s", case_num);
 
             node *n = create_node(label, "ellipse", "black", "solid", $4);
-            $$ = n;
-
+            free(case_num);
             free(label);
-            free($2);
+            $$ = n;
         }
     |   DEFAULT ':' liste_instructions
         {
@@ -518,8 +498,8 @@ appel:
                 free(war);
             }
             node *n = create_node($1, "septagon", "black", "solid", $3);
-            $$ = n;
             free($1);
+            $$ = n;
         }
 ;
 
@@ -527,8 +507,8 @@ variable:
         IDENTIFICATEUR
         {
             node *n = create_node($1, "ellipse", "black", "solid", NULL);
-            $$ = n;
             free($1);
+            $$ = n;
         }
     |   tableau 
         {
@@ -541,9 +521,9 @@ tableau:
         IDENTIFICATEUR '[' expression ']'
         {
             node *n = create_node($1, "ellipse", "black", "solid", NULL);
+            free($1);
             node_list *nl = create_node_list(2, n, $3);
             $$ = nl;
-            free($1);
         }
     |   tableau '[' expression ']'
         {
@@ -562,19 +542,19 @@ expression:
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node($2, "ellipse", "black", "solid", fils);
             $$ = n;
-            free($2);
         }
     |   MOINS expression 
         {
             node_list *fils = create_node_list(1, $2);
-            node *n = create_node($1, "ellipse", "black", "solid", fils);
+            node *n = create_node("-", "ellipse", "black", "solid", fils);
             $$ = n;
         }
     |   CONSTANTE 
         {
-            node *n = create_node($1, "ellipse", "black", "solid", NULL);
+            char *c = itoa($1);
+            node *n = create_node(c, "ellipse", "black", "solid", NULL);
+            free(c);
             $$ = n;
-            free($1);
         }
     |   variable 
         {
@@ -583,8 +563,8 @@ expression:
     |   IDENTIFICATEUR '(' liste_expressions ')' 
         {
             node *n = create_node($1, "septagon", "black", "solid", $3);
-            $$ = n;
             free($1);
+            $$ = n;
         }
 ;
 
@@ -595,7 +575,7 @@ liste_expressions:
         }
     |
         {
-            $$ = new_empty_node_list();
+            $$ = NULL;
         }
 ;
 
@@ -638,73 +618,73 @@ condition:
 binary_op:
         PLUS
         {
-            $$ = $1;
+            $$ = "+";
         }
     |   MOINS
         {
-            $$ = $1;
+            $$ = "-";
         }
     |   MUL
         {
-            $$ = $1;
+            $$ = "*";
         }
     |   DIV
         {
-            $$ = $1;
+            $$ = "/";
         }
     |   LSHIFT
         {
-            $$ = $1;
+            $$ = "<<";
         }
     |   RSHIFT
         {
-            $$ = $1;
+            $$ = ">>";
         }
     |   BAND
         {
-            $$ = $1;
+            $$ = "&";
         }
     |   BOR
         {
-            $$ = $1;
+            $$ = "|";
         }
 ;
 
 binary_rel:
         LAND
         {
-            $$ = $1;
+            $$ = "&&";
         }
     |   LOR
         {
-            $$ = $1;
+            $$ = "||";
         }
 ;
 
 binary_comp:
         LT
         {
-            $$ = $1;
+            $$ = "<";
         }
     |   GT
         {
-            $$ = $1;
+            $$ = ">";
         }
     |   GEQ
         {
-            $$ = $1;
+            $$ = ">=";
         }
     |   LEQ
         {
-            $$ = $1;
+            $$ = "<=";
         }
     |   EQ
         {
-            $$ = $1;
+            $$ = "==";
         }
     |   NEQ
         {
-            $$ = $1;
+            $$ = "!=";
         }
 ;
 

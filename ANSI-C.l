@@ -43,76 +43,28 @@ int yyerror(char *s);
                             }
 
 {D}+                        {
-                                yylval.var = strdup(yytext);
-                                /* remplacer par: yylval.ival = atoi(yytext); */
+                                yylval.ival = atoi(yytext);
                                 return CONSTANTE; 
                             }
 
-"+"                         { 
-                                yylval.var = strdup(yytext);
-                                return PLUS;
-                            }
-"-"                         { 
-                                yylval.var = strdup(yytext);
-                                return MOINS;
-                            }
-"*"                         { 
-                                yylval.var = strdup(yytext);
-                                return MUL;
-                            }
-"/"                         { 
-                                yylval.var = strdup(yytext);
-                                return DIV; 
-                            }
-"<<"                        { 
-                                yylval.var = strdup(yytext);
-                                return LSHIFT;
-                            }
-">>"                        {
-                                yylval.var = strdup(yytext);
-                                return RSHIFT;
-                            }
-"&"                         { 
-                                yylval.var = strdup(yytext);
-                                return BAND;
-                            }
-"|"                         { 
-                                yylval.var = strdup(yytext);
-                                return BOR;
-                            }
-"&&"                        {
-                                yylval.var = strdup(yytext);
-                                return LAND;
-                            }
-"||"                        {
-                                yylval.var = strdup(yytext);
-                                return LOR;
-                            }
-"<"                         { 
-                                yylval.var = strdup(yytext);
-                                return LT;
-                            }
-">"                         { 
-                                yylval.var = strdup(yytext);
-                                return GT;
-                            }
-">="                        { 
-                                yylval.var = strdup(yytext);
-                                return GEQ;
-                            }
-"<="                        { 
-                                yylval.var = strdup(yytext);
-                                return LEQ;
-                            }
-"=="                        { 
-                                yylval.var = strdup(yytext);
-                                return EQ;
-                            }
-"!="                        { 
-                                yylval.var = strdup(yytext);
-                                return NEQ;
-                            }
+"+"                         { return PLUS; }
+"-"                         { return MOINS; }
+"*"                         { return MUL; }
+"/"                         { return DIV; }
+"<<"                        { return LSHIFT; }
+">>"                        { return RSHIFT; }
+"&"                         { return BAND; }
+"|"                         { return BOR; }
+"&&"                        { return LAND; }
+"||"                        { return LOR; }
+"<"                         { return LT; }
+">"                         { return GT; }
+">="                        { return GEQ; }
+"<="                        { return LEQ; }
+"=="                        { return EQ; }
+"!="                        { return NEQ; }
 "!"                         { return NOT; }
+
 "{"                         { return '{'; }
 "}"                         { return '}'; }
 "("                         { return '('; }

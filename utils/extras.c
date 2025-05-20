@@ -4,10 +4,14 @@
  * Convertit un int en char*
  */
 char *itoa(int value) {
-    char *buffer = malloc(12); // Espace pour un int 32 bits signé (-2147483648 à 2147483647)
-    if (buffer != NULL) {
-        sprintf(buffer, "%d", value);  // Convertit int en chaîne
-    }
+    int length = snprintf(NULL, 0, "%d", value);
+    if (length < 0) return NULL;
+
+    char *buffer = malloc(length + 1);
+    if (buffer == NULL) return NULL;
+
+    snprintf(buffer, length + 1, "%d", value);
+
     return buffer;
 }
 
@@ -26,7 +30,7 @@ char *concat(int nbArgs, ...) {
     }
     va_end(args);
 
-    char *result = (char *)malloc(total_length + 1);
+    char *result = malloc(total_length + 1);
     if (!result) {
         fprintf(stderr, "Erreur : allocation mémoire échouée dans concat()\n");
         return NULL;

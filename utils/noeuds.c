@@ -29,7 +29,7 @@ char *unique_node_name() {
 
     int length = strlen("node_") + node_number_digits + 1;
 
-    char *name = (char *)malloc(length);
+    char *name = malloc(length);
     if (!name) {
         fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour char *name dans unique_node_name()\n" COLOR_RESET);
         exit(EXIT_FAILURE);
@@ -43,7 +43,7 @@ char *unique_node_name() {
  * Crée et renvoie un nouveau noeud
  */
 node *create_node(char *label, char *shape, char *color, char *style, node_list *fils){
-    node *n = (node *)malloc(sizeof(node));
+    node *n = malloc(sizeof(node));
     n->nom = unique_node_name();
     n->label = strdup_safe(label);
     n->shape = strdup_safe(shape);
@@ -72,7 +72,7 @@ void destroy_node(node *n){
  * Crée un nouvelle liste de noeuds vide
  */
 node_list *new_empty_node_list() {
-    node_list *nl = (node_list *)malloc(sizeof(node_list));
+    node_list *nl = malloc(sizeof(node_list));
     if (!nl) {
         fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour node_list dans new_empty_node_list()\n" COLOR_RESET);
         exit(EXIT_FAILURE);
@@ -131,7 +131,7 @@ node_list *create_node_list(int nb_nodes, ...) {
  * Ajoute le noeud à la fin de la liste 
  */
 node_list *add_node_to_list(node_list *nl, node *n) {
-    node_list *new_nl = (node_list *)malloc(sizeof(node_list));
+    node_list *new_nl = malloc(sizeof(node_list));
     if (!new_nl) {
         fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour node_list dans add_node_to_list()\n" COLOR_RESET);
         exit(EXIT_FAILURE);

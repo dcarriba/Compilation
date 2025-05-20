@@ -32,7 +32,7 @@ void convert_to_dot(tree_list *tl, char *dot_file_name) {
     }
 
     size_t len = strlen(dot_file_name) + 5;
-    char *filename = (char *)malloc(len);
+    char *filename = malloc(len);
     if (!filename) {
         fprintf(stderr, COLOR_RED "[Error] Allocation mémoire échouée pour le nom du fichier dot.\n" COLOR_RESET);
         return;
