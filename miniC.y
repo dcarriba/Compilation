@@ -552,7 +552,11 @@ expression:
             $$ = $2;
         }
     |   expression binary_op expression %prec OP
-        {
+        {   
+            if (strcmp($2, "/") == 0 && strcmp($3->label, "0") == 0) {
+                warningError("division par 0");
+
+            }
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node($2, "ellipse", "black", "solid", fils);
             $$ = n;
