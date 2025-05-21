@@ -10,3 +10,4 @@ compilateur
 .vscode/
 *.dot
 *.png
+*.dot.*

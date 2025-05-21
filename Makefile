@@ -19,6 +19,10 @@ YACC_OBJECT = $(YACC_OUTPUT:.c=.o)
 VALGRIND = valgrind
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all -s
 
+# Pour générer les graphiques dot
+DOT = dot
+DOT_OUTPUT_FORMAT = png
+
 # On récupère tous les fichiers utils/*.c
 SRCS = $(wildcard utils/*.c)
 
@@ -39,7 +43,7 @@ all: $(EXECUTABLE)
 
 # Pour compiler l'exécutable
 $(EXECUTABLE): $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
-	rm -f *.dot *.png Tests/*.dot Tests/*.png
+	rm -f *.dot *.dot.$(DOT_OUTPUT_FORMAT) Tests/*.dot Tests/*.dot.$(DOT_OUTPUT_FORMAT)
 	$(CC) $(CFLAGS) $(OBJECTS) $(LEX_OBJECT) $(YACC_OBJECT) -o $(EXECUTABLE)
 	rm -f $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
 
@@ -63,6 +67,10 @@ $(LEX_OUTPUT): $(YACC_HEADER) $(LEX_INPUT)
 $(YACC_OUTPUT) $(YACC_HEADER): $(YACC_INPUT)
 	$(YACC) -d -o $(YACC_OUTPUT) $(YACC_INPUT)
 
+
+VALGRIND_COMMAND =
+TEST_DIRECTORY = Tests
+
 # Règle qui compile et qui teste l'exécutable sur exempleminiC.c et tous les fichiers Tests/*.c
 run: $(EXECUTABLE)
 	@if [ ! -f $(EXECUTABLE) ]; then \
@@ -73,47 +81,25 @@ run: $(EXECUTABLE)
 	@echo "$(GREEN)Compilation réussie!$(RESET)\n"
 
 	@echo "Analyse de exempleminiC.c :"
-	@( ./$(EXECUTABLE) exempleminiC.c && ( dot -Tpng exempleminiC.dot -o exempleminiC.png ; echo "Génération de exempleminiC.png à partir de exempleminiC.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2;
+	@( $(VALGRIND_COMMAND) ./$(EXECUTABLE) exempleminiC.c && ( $(DOT) -T$(DOT_OUTPUT_FORMAT) exempleminiC.dot -o exempleminiC.dot.$(DOT_OUTPUT_FORMAT) ; echo "Génération de exempleminiC.dot.$(DOT_OUTPUT_FORMAT) à partir de exempleminiC.dot avec la commande $(DOT)" )) || echo "$(RED)Error $$?$(RESET)" >&2;
 	@echo "";
 
-	@if [ ! -d "Tests" ]; then \
-		echo "$(RED)[Error] Le dossier 'Tests' n'existe pas.$(RESET)"; \
+	@if [ ! -d "$(TEST_DIRECTORY)" ]; then \
+		echo "$(RED)[Error] Le dossier '$(TEST_DIRECTORY)' n'existe pas.$(RESET)"; \
 		exit 1; \
 	fi
 
-	@echo "Analyse des fichiers .c dans le dossier \"Tests\"...\n"
-	@for file in Tests/*.c; do \
+	@echo "Analyse des fichiers .c dans le dossier \"$(TEST_DIRECTORY)\"...\n"
+	@for file in $(TEST_DIRECTORY)/*.c; do \
 		echo "Analyse de $$file :"; \
 		base=$$(basename $$file .c); \
-		( ./$(EXECUTABLE) $$file && ( dot -Tpng Tests/$$base.dot -o Tests/$$base.png && echo "Génération de Tests/$$base.png à partir de Tests/$$base.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2; \
+		( $(VALGRIND_COMMAND) ./$(EXECUTABLE) $$file && ( $(DOT) -T$(DOT_OUTPUT_FORMAT) $(TEST_DIRECTORY)/$$base.dot -o $(TEST_DIRECTORY)/$$base.dot.$(DOT_OUTPUT_FORMAT) && echo "Génération de $(TEST_DIRECTORY)/$$base.dot.$(DOT_OUTPUT_FORMAT) à partir de $(TEST_DIRECTORY)/$$base.dot avec la commande $(DOT)" )) || echo "$(RED)Error $$?$(RESET)" >&2; \
 		echo ""; \
 	done
 
 # Règle qui compile et qui teste l'exécutable avec valgrind sur exempleminiC.c et tous les fichiers Tests/*.c
-valgrind-run: $(EXECUTABLE)
-	@if [ ! -f $(EXECUTABLE) ]; then \
-		echo "$(RED)[Error] Compilation échouée.$(RESET)"; \
-		exit 1; \
-	fi
-
-	@echo "$(GREEN)Compilation réussie!$(RESET)\n"
-
-	@echo "Analyse de exempleminiC.c avec valgrind :"
-	@( $(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) exempleminiC.c && ( dot -Tpng exempleminiC.dot -o exempleminiC.png ; echo "Génération de exempleminiC.png à partir de exempleminiC.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2;
-	@echo "";
-
-	@if [ ! -d "Tests" ]; then \
-		echo "$(RED)[Error] Le dossier 'Tests' n'existe pas.$(RESET)"; \
-		exit 1; \
-	fi
-
-	@echo "Analyse des fichiers .c dans le dossier \"Tests\" avec valgrind...\n"
-	@for file in Tests/*.c; do \
-		echo "Analyse de $$file avec valgrind :"; \
-		base=$$(basename $$file .c); \
-		( $(VALGRIND) $(VALGRIND_FLAGS) ./$(EXECUTABLE) $$file && ( dot -Tpng Tests/$$base.dot -o Tests/$$base.png && echo "Génération de Tests/$$base.png à partir de Tests/$$base.dot avec la commande dot" )) || echo "$(RED)Error $$?$(RESET)" >&2; \
-		echo ""; \
-	done
+valgrind-run: VALGRIND_COMMAND = $(VALGRIND) $(VALGRIND_FLAGS)
+valgrind-run: run
 
 # Règle pour compiler avec l'option -g de gcc afin de pouvoir débugger
 debug: CFLAGS += -g
@@ -121,5 +107,5 @@ debug: $(EXECUTABLE)
 
 # Règle pour supprimer l'exécutable et tous les fichiers intermédiaires
 clean:
-	rm -f *.dot *.png Tests/*.dot Tests/*.png
+	rm -f *.dot *.dot.$(DOT_OUTPUT_FORMAT) Tests/*.dot Tests/*.dot.$(DOT_OUTPUT_FORMAT)
 	rm -f $(EXECUTABLE) $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
