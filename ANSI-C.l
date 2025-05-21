@@ -82,7 +82,7 @@ int yyerror(char *s);
 
 .                           {
                                 fprintf (stderr, COLOR_RED "[Error] lexical error %s à la ligne %d\n" COLOR_RESET, yytext, yylineno);
-                                error = 1;
+                                error++;
                             }
  
 %%

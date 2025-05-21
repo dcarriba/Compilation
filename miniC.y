@@ -32,20 +32,18 @@ table_t *pile_tables_fonctions = NULL;
 int n_param = 0;
 int is_void = 0;
 int is_int = 0;
-int is_switch = 0;
 int has_return = 0;
 
 int nb_dim = 0;
 int *tailles;
-int nb_aritee = 0;
 
-void warningError(char *s){
+void warning(char *s){
     fprintf(stdout, COLOR_MAGENTA "[Warning] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
 }
 
 int yyerror(char *s){
     fprintf(stderr, COLOR_RED "[Error] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
-    error = 1;
+    error++;
     return 0;
 }
 
@@ -91,6 +89,18 @@ int yyerror(char *s){
 %destructor {
     if (error && $$) free($$);
 } <var>
+
+%destructor {
+    if (error && $$) destroy_node($$);
+} <noeud>
+
+%destructor {
+    if (error && $$) destroy_node_list($$);
+} <liste_noeuds>
+
+%destructor {
+    if (error && $$) destroy_tree($$);
+} <arbre>
 
 %destructor { 
     if (error && $$) {
@@ -171,7 +181,7 @@ liste_declarateurs:
             symbole_t *s = rechercher(pile_tables_variables, $3);
             if (s != NULL) {
                 char *war = concat(3, "La variable ", $3, " a déjà été déclarée dans le même bloc");
-                warningError(war);
+                warning(war);
                 free(war);
             }
             declarer(pile_tables_variables, $3, nb_dim, tailles, INT_T);
@@ -218,9 +228,9 @@ declarationfonction :
         type IDENTIFICATEUR '(' push liste_parms ')'
         {
             if (is_int==1) {
-                declarer(pile_tables_fonctions, $2, length_of_node_list($5),NULL, INT_T);
+                declarer(pile_tables_fonctions, $2, length_of_node_list($5), NULL, INT_T);
             } else {
-                declarer(pile_tables_fonctions, $2, length_of_node_list($5),NULL, VOID_T);
+                declarer(pile_tables_fonctions, $2, length_of_node_list($5), NULL, VOID_T);
             }
 
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
@@ -237,9 +247,9 @@ fonction:
         declarationfonction '{' liste_declarations liste_instructions pop'}' 
         {
             if (is_void == 0 && has_return == 0) {
-                warningError("Absence de return pour une fonction de type int");
+                warning("Absence de return pour une fonction de type int");
             } else if (is_int == 0 && has_return == 1) {
-                warningError("Return present dans une fonction de type void");
+                warning("Return present dans une fonction de type void");
             }
 
             has_return = 0;
@@ -462,19 +472,19 @@ affectation:
         {   
             symbole_t *s = rechercher_dans_pile(pile_tables_variables, extraire_nom_base($1));
             if (!s) {
-                char *err = concat(3, "Variable ", extraire_nom_base($1), " non déclarée");
-                warningError(err);
-                free(err);
+                char *war = concat(3, "Variable ", extraire_nom_base($1), " non déclarée");
+                warning(war);
+                free(war);
             } else {
                 int nb_dim_util = get_nb_dimensions_utilisees($1);
                 if (nb_dim_util != s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *err = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
+                    char *war = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
-                    warningError(err);
-                    free(err);
+                    warning(war);
+                    free(war);
                 } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
                     for (int i = 0; i < nb_dim_util; i++) {
                         int indice = get_indice_dimension($1, i);
@@ -482,12 +492,12 @@ affectation:
                             char *incice_str = itoa(indice);
                             char *s_taillesTab_str = itoa(s->taillesTab[i]);
                             char *i_plus_1_str = itoa(i+1);
-                            char *err = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            char *war = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
                             free(incice_str);
                             free(s_taillesTab_str);
                             free(i_plus_1_str);
-                            warningError(err);
-                            free(err);
+                            warning(war);
+                            free(war);
                         }
                     }
                 }
@@ -513,14 +523,14 @@ appel:
             symbole_t *a = rechercher_dans_pile(pile_tables_fonctions, $1);
             if (a == NULL){
                 char *war = concat(3, "Fonction ", $1, " non déclarée");
-                warningError(war);
+                warning(war);
                 free(war);
             }
             if (a->aritee != length_of_node_list($3)) {
                 char *aritee = itoa(a->aritee);
                 char *len = itoa(length_of_node_list($3));
                 char *war = concat(4, "Fonction appelée avec ", len, " paramètres au lieu de ", aritee);
-                warningError(war);
+                warning(war);
                 free(len);
                 free(aritee);
                 free(war);
@@ -586,7 +596,7 @@ expression:
     |   expression DIV expression
         {
             if (strcmp($3->label, "0") == 0) {
-                warningError("division par 0");
+                warning("division par 0");
             }
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node("/", "ellipse", "black", "solid", fils);
@@ -633,19 +643,19 @@ expression:
         {   
             symbole_t *s = rechercher_dans_pile(pile_tables_variables, extraire_nom_base($1));
             if (!s) {
-                char *err = concat(3, "Variable ", extraire_nom_base($1), " non déclarée");
-                warningError(err);
-                free(err);
+                char *war = concat(3, "Variable ", extraire_nom_base($1), " non déclarée");
+                warning(war);
+                free(war);
             } else {
                 int nb_dim_util = get_nb_dimensions_utilisees($1);
                 if (nb_dim_util != s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *err = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
+                    char *war = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
-                    warningError(err);
-                    free(err);
+                    warning(war);
+                    free(war);
                 } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
                     for (int i = 0; i < nb_dim_util; i++) {
                         int indice = get_indice_dimension($1, i);
@@ -653,12 +663,12 @@ expression:
                             char *incice_str = itoa(indice);
                             char *s_taillesTab_str = itoa(s->taillesTab[i]);
                             char *i_plus_1_str = itoa(i+1);
-                            char *err = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            char *war = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
                             free(incice_str);
                             free(s_taillesTab_str);
                             free(i_plus_1_str);
-                            warningError(err);
-                            free(err);
+                            warning(war);
+                            free(war);
                         }
                     }
                 }
@@ -670,19 +680,19 @@ expression:
             symbole_t *a = rechercher_dans_pile(pile_tables_fonctions, $1);
             if (a == NULL) {
                 char *war = concat(3, "Fonction ", $1, " non déclarée");
-                warningError(war);
+                warning(war);
                 free(war);
             } else {
                 if (a->type != INT_T) {
                     char *war = concat(3, "Fonction ", $1, " n'est pas de type int");
-                    warningError(war);
+                    warning(war);
                     free(war);
                 }
                 if (a->aritee != length_of_node_list($3)) {
                     char *aritee = itoa(a->aritee);
                     char *len = itoa(length_of_node_list($3));
                     char *war = concat(4, "Fonction appelée avec ", len, " paramètres au lieu de ", aritee);
-                    warningError(war);
+                    warning(war);
                     free(len);
                     free(aritee);
                     free(war);
