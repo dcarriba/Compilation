@@ -65,7 +65,7 @@ int yyerror(char *s){
 %type<arbre> fonction
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
-%type<str> type binary_op binary_rel binary_comp
+%type<str> type binary_rel binary_comp
 %type<var> declarateur declarationfonction
 
 %token<var> IDENTIFICATEUR
@@ -84,7 +84,7 @@ int yyerror(char *s){
 %left LAND LOR
 %nonassoc THEN
 %nonassoc ELSE
-%left OP
+%nonassoc MOINSUNAIRE
 %left REL
 %start programme
 
@@ -565,17 +565,58 @@ expression:
         {
             $$ = $2;
         }
-    |   expression binary_op expression %prec OP
-        {   
-            if (strcmp($2, "/") == 0 && strcmp($3->label, "0") == 0) {
-                warningError("division par 0");
-
-            }
+    |   expression PLUS expression
+        {
             node_list *fils = create_node_list(2, $1, $3);
-            node *n = create_node($2, "ellipse", "black", "solid", fils);
+            node *n = create_node("+", "ellipse", "black", "solid", fils);
             $$ = n;
         }
-    |   MOINS expression 
+    |   expression MOINS expression
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("-", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   expression MUL expression
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("*", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   expression DIV expression
+        {
+            if (strcmp($3->label, "0") == 0) {
+                warningError("division par 0");
+            }
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("/", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   expression LSHIFT expression
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("<<", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   expression RSHIFT expression
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node(">>", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   expression BAND expression
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("&", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   expression BOR expression
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("|", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   MOINS expression %prec MOINSUNAIRE
         {
             node_list *fils = create_node_list(1, $2);
             node *n = create_node("-", "ellipse", "black", "solid", fils);
@@ -698,41 +739,6 @@ condition:
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node($2, "ellipse", "black", "solid", fils);
             $$ = n;
-        }
-;
-
-binary_op:
-        PLUS
-        {
-            $$ = "+";
-        }
-    |   MOINS
-        {
-            $$ = "-";
-        }
-    |   MUL
-        {
-            $$ = "*";
-        }
-    |   DIV
-        {
-            $$ = "/";
-        }
-    |   LSHIFT
-        {
-            $$ = "<<";
-        }
-    |   RSHIFT
-        {
-            $$ = ">>";
-        }
-    |   BAND
-        {
-            $$ = "&";
-        }
-    |   BOR
-        {
-            $$ = "|";
         }
 ;
 
