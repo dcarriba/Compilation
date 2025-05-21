@@ -170,12 +170,10 @@ void destroy_node_list(node_list *nl){
 void print_node_recursive(node *n, int indent_level) {
     if (!n) return;
 
-    // Indentation visuelle
     for (int i = 0; i < indent_level; i++) {
         printf("  ");
     }
 
-    // Affichage du noeud courant
     printf(COLOR_YELLOW "Node Name: %s\n" COLOR_RESET, n->nom);
     for (int i = 0; i < indent_level; i++) printf("  ");
     printf("  Label : %s\n", n->label);
@@ -186,7 +184,6 @@ void print_node_recursive(node *n, int indent_level) {
     for (int i = 0; i < indent_level; i++) printf("  ");
     printf("  Style : %s\n", n->style);
 
-    // Appel récursif sur les fils
     if (n->fils) {
         node_list *fils = n->fils;
         while (fils) {
@@ -203,8 +200,9 @@ void print_node(node *n) {
     print_node_recursive(n, 0);
 }
 
-
-
+/*
+ * Retourne le nom de la variable (prend son neoud en entree) 
+ */
 char *extraire_nom_base(node *var) {
     if (!var) return NULL;
     if (strcmp(var->label, "TAB") == 0 && var->fils && var->fils->item) {
@@ -213,6 +211,9 @@ char *extraire_nom_base(node *var) {
     return var->label;  
 }
 
+/*
+ * Retourne le nombre de dimensions d'une variable (0 pour une variable, n pour un tableau de n dimensions) (prend son neoud en entree) 
+ */
 int get_nb_dimensions_utilisees(node *var) {
     if (!var || strcmp(var->label, "TAB") != 0) return 0;
     int count = 0;
@@ -225,6 +226,9 @@ int get_nb_dimensions_utilisees(node *var) {
     return count;
 }
 
+/*
+ * Retourne la taille déclarée (le nombre d'indices declarée) d'une dimension donnée d'une variable (prend son neoud en entree)
+ */
 int get_indice_dimension(node *var, int dim) {
     if (!var || strcmp(var->label, "TAB") != 0) return -1;
     node_list *cur = var->fils;
@@ -238,4 +242,3 @@ int get_indice_dimension(node *var, int dim) {
     if (!cur || !cur->item || !cur->item->label) return -1;
     return atoi(cur->item->label);  
 }
-

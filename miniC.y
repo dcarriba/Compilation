@@ -16,20 +16,24 @@ int yylex();
 int yyerror();
 int yylex_destroy();
 
+int error = 0;
+
+/* Fichier en entrée */
+FILE* fichier = NULL;
+
 /* Arbre Abstrait du programme */
 tree_list *arbre_abstrait = NULL;
 
-table_t *pile_tables = NULL;
-table_t *pile_tablesFonc = NULL;
+/* Pile avec les tables de symboles des variables */
+table_t *pile_tables_variables = NULL;
+/* Pile avec les tables de symboles des fonctions */
+table_t *pile_tables_fonctions = NULL;
 
-int n_erreur = 0;
-int n_warning = 0;
 int n_param = 0;
 int is_void = 0;
 int is_int = 0;
 int is_switch = 0;
 int has_return = 0;
-
 
 int nb_dim = 0;
 int *tailles;
@@ -37,18 +41,18 @@ int nb_aritee = 0;
 
 void warningError(char *s){
     fprintf(stdout, COLOR_MAGENTA "[Warning] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
-    n_warning++;
 }
 
 int yyerror(char *s){
     fprintf(stderr, COLOR_RED "[Error] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
-    n_erreur++;
-    return 1;
+    error = 1;
+    return 0;
 }
 
 %}
 
 %union {
+    char *str;
     char *var;
     int ival;
     node *noeud;
@@ -57,21 +61,20 @@ int yyerror(char *s){
     tree_list *liste_arbres;
 }
 
-
 %type<liste_arbres> programme liste_fonctions
 %type<arbre> fonction
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
-%type<var> type binary_op binary_rel binary_comp declarateur declarationfonction
-
+%type<str> type binary_op binary_rel binary_comp
+%type<var> declarateur declarationfonction
 
 %token<var> IDENTIFICATEUR
 %token<ival> CONSTANTE
-%token<var> VOID INT
+%token<str> VOID INT
 %token FOR WHILE IF ELSE SWITCH CASE DEFAULT
 %token BREAK RETURN
-%token<var> PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
-%token<var> GEQ LEQ EQ NEQ 
+%token<str> PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
+%token<str> GEQ LEQ EQ NEQ 
 %token NOT EXTERN
 
 %left PLUS MOINS
@@ -85,28 +88,39 @@ int yyerror(char *s){
 %left REL
 %start programme
 
+%destructor {
+    if (error && $$) free($$);
+} <var>
+
+%destructor { 
+    if (error && $$) {
+        destroy_tree_list($$);
+        arbre_abstrait = NULL; 
+    }
+} <liste_arbres>
+
 %%
 push : 
         { 
-            push_table(&pile_tables);
+            push_table(&pile_tables_variables);
         }
 ;
 
 pop :
         { 
-            pop_table(&pile_tables); 
+            pop_table(&pile_tables_variables); 
         }
 ;
 
 pushf : 
         { 
-            push_table(&pile_tablesFonc);
+            push_table(&pile_tables_fonctions);
         }
 ;
 
 popf :
         { 
-            pop_table(&pile_tablesFonc); 
+            pop_table(&pile_tables_fonctions); 
         }
 ;
 
@@ -146,7 +160,7 @@ declaration:
         type liste_declarateurs ';'  
         {
             if(is_void == 1){
-                yyerror("une déclaration ne peux pas etre de type void");
+                yyerror("Une variable ne peux pas être déclarée avec le type void");
             }
         }
 ;
@@ -154,13 +168,13 @@ declaration:
 liste_declarateurs:
         liste_declarateurs ',' declarateur
         {
-            symbole_t *s = rechercher(pile_tables, $3);
+            symbole_t *s = rechercher(pile_tables_variables, $3);
             if (s != NULL) {
-                char *war = concat(3, "La variable : ", $3, " a déjà été déclarée dans le même bloc");
+                char *war = concat(3, "La variable ", $3, " a déjà été déclarée dans le même bloc");
                 warningError(war);
                 free(war);
             }
-            declarer(pile_tables, $3, nb_dim, tailles, INT_T);
+            declarer(pile_tables_variables, $3, nb_dim, tailles, INT_T);
             free(tailles);
             tailles = NULL;
             nb_dim = 0;
@@ -168,13 +182,13 @@ liste_declarateurs:
         }
     |   declarateur
         {
-            symbole_t *s = rechercher(pile_tables, $1);
+            symbole_t *s = rechercher(pile_tables_variables, $1);
             if (s != NULL) {
-                char *war = concat(3, "La variable : ", $1, " a déjà été déclarée dans le même bloc");
-                warningError(war);
-                free(war);
+                char *err = concat(3, "La variable ", $1, " a déjà été déclarée dans le même bloc");
+                yyerror(err);
+                free(err);
             }
-            declarer(pile_tables, $1, nb_dim, tailles, INT_T);
+            declarer(pile_tables_variables, $1, nb_dim, tailles, INT_T);
             free(tailles);
             tailles = NULL;
             nb_dim = 0;
@@ -204,9 +218,9 @@ declarationfonction :
         type IDENTIFICATEUR '(' push liste_parms ')'
         {
             if (is_int==1) {
-                declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, INT_T);
+                declarer(pile_tables_fonctions, $2, length_of_node_list($5),NULL, INT_T);
             } else {
-                declarer(pile_tablesFonc, $2, length_of_node_list($5),NULL, VOID_T);
+                declarer(pile_tables_fonctions, $2, length_of_node_list($5),NULL, VOID_T);
             }
 
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
@@ -240,7 +254,7 @@ fonction:
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
         {
-            declarer(pile_tablesFonc, $3, n_param,NULL, INT_T);
+            declarer(pile_tables_fonctions, $3, n_param,NULL, INT_T);
             
             n_param=0;
 
@@ -292,7 +306,7 @@ l_parms :
 parm:
         INT IDENTIFICATEUR
         {   
-            declarer(pile_tables, $2, nb_dim, tailles, INT_T);
+            declarer(pile_tables_variables, $2, nb_dim, tailles, INT_T);
             n_param++;
             node *n = create_node($2, "ellipse", "black", "solid", NULL);
             free($2);
@@ -446,9 +460,9 @@ saut:
 affectation:
         variable '=' expression 
         {   
-            symbole_t *s = rechercher_dans_pile(pile_tables, extraire_nom_base($1));
+            symbole_t *s = rechercher_dans_pile(pile_tables_variables, extraire_nom_base($1));
             if (!s) {
-                char *err = concat(3, "Variable non déclarée : ", extraire_nom_base($1), "\n");
+                char *err = concat(3, "Variable ", extraire_nom_base($1), " non déclarée");
                 warningError(err);
                 free(err);
             } else {
@@ -456,7 +470,7 @@ affectation:
                 if (nb_dim_util != s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *err = concat(5, "Variable de dimension : ", nb_dim_util_str,"au lieu de ", s_aritee_str, "\n");
+                    char *err = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
                     warningError(err);
@@ -496,16 +510,16 @@ bloc:
 appel:
         IDENTIFICATEUR '(' liste_expressions ')' ';'
         {   
-            symbole_t *a = rechercher_dans_pile(pile_tablesFonc, $1);
+            symbole_t *a = rechercher_dans_pile(pile_tables_fonctions, $1);
             if (a == NULL){
-                char *war = concat(3,"Fonction ",$1," pas déclarer");
+                char *war = concat(3, "Fonction ", $1, " non déclarée");
                 warningError(war);
                 free(war);
             }
-            if (a->aritee != length_of_node_list($3)){
+            if (a->aritee != length_of_node_list($3)) {
                 char *aritee = itoa(a->aritee);
                 char *len = itoa(length_of_node_list($3));
-                char *war = concat(4,"Fonction appelé avec ",len," parametres au lieu de",aritee);
+                char *war = concat(4, "Fonction appelée avec ", len, " paramètres au lieu de ", aritee);
                 warningError(war);
                 free(len);
                 free(aritee);
@@ -572,9 +586,9 @@ expression:
         }
     |   variable 
         {   
-            symbole_t *s = rechercher_dans_pile(pile_tables, extraire_nom_base($1));
+            symbole_t *s = rechercher_dans_pile(pile_tables_variables, extraire_nom_base($1));
             if (!s) {
-                char *err = concat(3, "Variable non déclarée : ", extraire_nom_base($1), "\n");
+                char *err = concat(3, "Variable ", extraire_nom_base($1), " non déclarée");
                 warningError(err);
                 free(err);
             } else {
@@ -582,7 +596,7 @@ expression:
                 if (nb_dim_util != s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *err = concat(5, "Variable de dimension : ", nb_dim_util_str,"au lieu de ", s_aritee_str, "\n");
+                    char *err = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
                     warningError(err);
@@ -608,9 +622,9 @@ expression:
         }
     |   IDENTIFICATEUR '(' liste_expressions ')' 
         {   
-            symbole_t *a = rechercher_dans_pile(pile_tablesFonc, $1);
+            symbole_t *a = rechercher_dans_pile(pile_tables_fonctions, $1);
             if (a == NULL) {
-                char *war = concat(3, "Fonction ", $1, " pas déclarer");
+                char *war = concat(3, "Fonction ", $1, " non déclarée");
                 warningError(war);
                 free(war);
             } else {
@@ -622,7 +636,7 @@ expression:
                 if (a->aritee != length_of_node_list($3)) {
                     char *aritee = itoa(a->aritee);
                     char *len = itoa(length_of_node_list($3));
-                    char *war = concat(4, "Fonction appelé avec ", len, " parametres au lieu de ", aritee);
+                    char *war = concat(4, "Fonction appelée avec ", len, " paramètres au lieu de ", aritee);
                     warningError(war);
                     free(len);
                     free(aritee);
@@ -758,28 +772,28 @@ binary_comp:
 
 %%
 
-void finProgramme(){
-    liberer_pile(&pile_tables);
-    liberer_pile(&pile_tablesFonc);
+void fin_programme() {
+    liberer_pile(&pile_tables_variables);
+    liberer_pile(&pile_tables_fonctions);
     yylex_destroy();
+    if (fichier) fclose(fichier);
     if (arbre_abstrait) destroy_tree_list(arbre_abstrait);
     if (tailles) free(tailles);
 }
 
-int main(int argc, char* argv[]){
-    if (atexit(finProgramme) != 0){
-        fprintf(stderr, COLOR_RED "[Error] Erreur de l'enregistrement de la fonction finProgramme() avec atexit()\n" COLOR_RESET);
+int main(int argc, char* argv[]) {
+    if (atexit(fin_programme) != 0) {
+        fprintf(stderr, COLOR_RED "[Error] Erreur de l'enregistrement de la fonction fin_programme() avec atexit()\n" COLOR_RESET);
         return 4;
     }
 
-    FILE* fichier = NULL;
     char* nom_fichier;
 
-    if (argc == 1){
+    if (argc == 1) {
         yyin = stdin;
-    } else if (argc == 2){
+    } else if (argc == 2) {
         nom_fichier = argv[1];
-        if ((fichier = fopen(nom_fichier,"r")) == NULL){ 
+        if ((fichier = fopen(nom_fichier,"r")) == NULL) { 
             fprintf(stderr, COLOR_RED "[Error] Erreur de lecture du ficher : %s\n" COLOR_RESET, nom_fichier);
             return 2;
         }
@@ -789,20 +803,17 @@ int main(int argc, char* argv[]){
         return 3;
     }
 
-    if (yyparse() != 0) {
-        fprintf(stderr, COLOR_RED "[Error] Erreur lors de l'analyse lexicale, syntaxique ou sémantique\n" COLOR_RESET);
-        if (fichier) fclose(fichier);
+    if (yyparse() != 0 || error) {
+        fprintf(stderr, COLOR_RED "[Error] Erreur lors de l'analyse lexicale, syntaxique ou sémantique. Construction de l'arbre abstrait et génération du fichier DOT impossible.\n" COLOR_RESET);
         return 1;
     }
-
-    if (fichier) fclose(fichier);
 
     printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! Construction de l'arbre abstrait sans erreurs.\n" COLOR_RESET);
     
     char *nom_fichier_dot = strdup(nom_fichier);
-
-    char *point = strrchr(nom_fichier_dot, '.'); /* pointe vers le . du .c a la fin du nom du fichier */
-    if (point) *point = '\0'; /* on enlève le .c à la fin du nom du fichier */
+    /* on enlève ".c" à la fin du nom de fichier */
+    char *point = strrchr(nom_fichier_dot, '.');
+    if (point) *point = '\0';
 
     convert_to_dot(arbre_abstrait, nom_fichier_dot);
     free(nom_fichier_dot);

@@ -46,7 +46,7 @@ void convert_to_dot(tree_list *tl, char *dot_file_name) {
         return;
     }
 
-    /* En enlève les caractères spéciaux comme / . ou - car le nom du digraph ne peut pas les contenir*/
+    /* En enlève les caractères spéciaux comme / . ou - car le nom du digraph ne peut pas les contenir */
     char *cleaned_name = strdup(dot_file_name);
     if (!cleaned_name) {
         fprintf(stderr, COLOR_RED "[Error] Échec d'allocation mémoire pour cleaned_name.\n" COLOR_RESET);

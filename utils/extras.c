@@ -47,6 +47,3 @@ char *concat(int nbArgs, ...) {
 
     return result;
 }
-
-
-

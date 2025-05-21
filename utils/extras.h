@@ -9,5 +9,4 @@
 char *itoa(int value);
 char *concat(int nbArgs, ...);
 
-
 #endif

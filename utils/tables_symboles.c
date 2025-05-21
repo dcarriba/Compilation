@@ -62,12 +62,9 @@ void declarer(table_t *pile, char *nom, int aritee, int *taillesTab, type_t type
         exit(EXIT_FAILURE);
     }
 
-    if (rechercher(top_table(pile), nom)) {
-        fprintf(stderr, "Erreur : redéclaration de la variable %s\n", nom);
-        exit(EXIT_FAILURE);
+    if (!rechercher(top_table(pile), nom)) {
+        ajouter(top_table(pile), nom, aritee, taillesTab, type);
     }
-
-    ajouter(top_table(pile), nom, aritee, taillesTab, type);
 }
 
 /*
@@ -103,7 +100,7 @@ void verifier_dimensions(table_t *pile, char *nom, int nbDemandees) {
 void verifier_tailles(table_t *pile, char *nom, int nbDemandees, int *taillesDemandees) {
     symbole_t *s = rechercher_dans_pile(pile, nom);
     if (!s) {
-        fprintf(stderr, "Erreur : %s n’a pas été déclarée !\n", nom);
+        fprintf(stderr, "Erreur : %s n'a pas été déclarée !\n", nom);
         exit(EXIT_FAILURE);
     }
 

@@ -16,6 +16,7 @@ L                       [a-zA-Z_]
 
 extern YYSTYPE yylval;
 extern int yylineno;
+extern int error;
 
 int yylex();
 int yyerror(char *s);
@@ -81,7 +82,7 @@ int yyerror(char *s);
 
 .                           {
                                 fprintf (stderr, COLOR_RED "[Error] lexical error %s à la ligne %d\n" COLOR_RESET, yytext, yylineno);
-                                exit(1); 
+                                error = 1;
                             }
  
 %%
