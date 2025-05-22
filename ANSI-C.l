@@ -81,7 +81,7 @@ int yyerror(char *s);
 "/*"([^*]|\*+[^*/])*\*+"/"  { /* Ignorer les commentaires */ }
 
 .                           {
-                                fprintf (stderr, COLOR_RED "[Error] lexical error %s à la ligne %d\n" COLOR_RESET, yytext, yylineno);
+                                fprintf(stderr, COLOR_RED "[Error] lexical error %s à la ligne %d\n" COLOR_RESET, yytext, yylineno);
                                 error++;
                             }
  

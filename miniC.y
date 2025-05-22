@@ -169,7 +169,7 @@ liste_fonctions:
 declaration:
         type liste_declarateurs ';'  
         {
-            if(is_void == 1){
+            if(strcmp($1, "void") == 0) {
                 yyerror("Une variable ne peux pas être déclarée avec le type void");
             }
         }
@@ -227,10 +227,14 @@ declarateur:
 declarationfonction : 
         type IDENTIFICATEUR '(' push liste_parms ')'
         {
-            if (is_int==1) {
+            if (strcmp($$, "int") == 0) {
                 declarer(pile_tables_fonctions, $2, length_of_node_list($5), NULL, INT_T);
-            } else {
+                is_void = 0;
+                is_int = 1; 
+            } else if (strcmp($$, "void") == 0) {
                 declarer(pile_tables_fonctions, $2, length_of_node_list($5), NULL, VOID_T);
+                is_void = 1;
+                is_int = 0; 
             }
 
             int len = strlen($1) + strlen(", ") + strlen($2) + 1;
@@ -242,6 +246,7 @@ declarationfonction :
 
             $$ = label;
         }
+;
 
 fonction:
         declarationfonction '{' liste_declarations liste_instructions pop'}' 
@@ -278,15 +283,11 @@ fonction:
 type:
         VOID 
         {
-            is_void = 1;
-            is_int = 0; 
             $$ = "void";
             
         }
     |   INT 
-        {
-            is_void = 0;
-            is_int = 1;        
+        {       
             $$ = "int";
         }
 ;

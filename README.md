@@ -77,6 +77,26 @@ sudo apt-get install valgrind
 sudo apt-get install graphviz
 ```
 
+### Compiler et exécuter sur des fichiers tests produisant des erreurs
+
+```bash
+make run-error
+```
+
+Compile et exécute `./compilateur` sur des fichiers tests supplémentaires produisant des erreurs (TestsError/*.c).
+
+Les fichiers seront compilés avec des erreurs, et par conséquent aucun fichier `.dot` ne sera généré.
+
+### Compiler et exécuter avec `valgrind` sur des fichiers tests produisant des erreurs
+
+```bash
+make valgrind-run-error
+```
+
+Compile et exécute `valgrind ./compilateur` sur des fichiers tests supplémentaires produisant des erreurs (TestsError/*.c).
+
+Les fichiers seront compilés avec des erreurs, et par conséquent aucun fichier `.dot` ne sera généré.
+
 ### Compiler pour pouvoir débugger
 
 ```bash

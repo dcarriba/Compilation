@@ -70,6 +70,7 @@ $(YACC_OUTPUT) $(YACC_HEADER): $(YACC_INPUT)
 
 VALGRIND_COMMAND =
 TEST_DIRECTORY = Tests
+ANAYLSE_EXEMPLEMINIC = true
 
 # Règle qui compile et qui teste l'exécutable sur exempleminiC.c et tous les fichiers Tests/*.c
 run: $(EXECUTABLE)
@@ -80,9 +81,11 @@ run: $(EXECUTABLE)
 
 	@echo "$(GREEN)Compilation réussie!$(RESET)\n"
 
-	@echo "Analyse de exempleminiC.c :"
-	@( $(VALGRIND_COMMAND) ./$(EXECUTABLE) exempleminiC.c && ( $(DOT) -T$(DOT_OUTPUT_FORMAT) exempleminiC.dot -o exempleminiC.dot.$(DOT_OUTPUT_FORMAT) ; echo "Génération de exempleminiC.dot.$(DOT_OUTPUT_FORMAT) à partir de exempleminiC.dot avec la commande $(DOT)" )) || echo "$(RED)Error $$?$(RESET)" >&2;
-	@echo "";
+	@if [ "$(ANAYLSE_EXEMPLEMINIC)" = "true" ]; then \
+		echo "Analyse de exempleminiC.c :"; \
+		( $(VALGRIND_COMMAND) ./$(EXECUTABLE) exempleminiC.c && ( $(DOT) -T$(DOT_OUTPUT_FORMAT) exempleminiC.dot -o exempleminiC.dot.$(DOT_OUTPUT_FORMAT) ; echo "Génération de exempleminiC.dot.$(DOT_OUTPUT_FORMAT) à partir de exempleminiC.dot avec la commande $(DOT)" )) || echo "$(RED)Code erreur : $$?$(RESET)" >&2; \
+		echo ""; \
+	fi
 
 	@if [ ! -d "$(TEST_DIRECTORY)" ]; then \
 		echo "$(RED)[Error] Le dossier '$(TEST_DIRECTORY)' n'existe pas.$(RESET)"; \
@@ -93,13 +96,22 @@ run: $(EXECUTABLE)
 	@for file in $(TEST_DIRECTORY)/*.c; do \
 		echo "Analyse de $$file :"; \
 		base=$$(basename $$file .c); \
-		( $(VALGRIND_COMMAND) ./$(EXECUTABLE) $$file && ( $(DOT) -T$(DOT_OUTPUT_FORMAT) $(TEST_DIRECTORY)/$$base.dot -o $(TEST_DIRECTORY)/$$base.dot.$(DOT_OUTPUT_FORMAT) && echo "Génération de $(TEST_DIRECTORY)/$$base.dot.$(DOT_OUTPUT_FORMAT) à partir de $(TEST_DIRECTORY)/$$base.dot avec la commande $(DOT)" )) || echo "$(RED)Error $$?$(RESET)" >&2; \
+		( $(VALGRIND_COMMAND) ./$(EXECUTABLE) $$file && ( $(DOT) -T$(DOT_OUTPUT_FORMAT) $(TEST_DIRECTORY)/$$base.dot -o $(TEST_DIRECTORY)/$$base.dot.$(DOT_OUTPUT_FORMAT) && echo "Génération de $(TEST_DIRECTORY)/$$base.dot.$(DOT_OUTPUT_FORMAT) à partir de $(TEST_DIRECTORY)/$$base.dot avec la commande $(DOT)" )) || echo "$(RED)Code erreur : $$?$(RESET)" >&2; \
 		echo ""; \
 	done
 
 # Règle qui compile et qui teste l'exécutable avec valgrind sur exempleminiC.c et tous les fichiers Tests/*.c
 valgrind-run: VALGRIND_COMMAND = $(VALGRIND) $(VALGRIND_FLAGS)
 valgrind-run: run
+
+# Règle qui compile et qui teste l'exécutable sur tous les fichiers TestsError/*.c
+run-error: TEST_DIRECTORY = TestsError
+run-error: ANAYLSE_EXEMPLEMINIC = false
+run-error: run
+
+# Règle qui compile et qui teste l'exécutable avec valgrind sur tous les fichiers TestsError/*.c
+valgrind-run-error: VALGRIND_COMMAND = $(VALGRIND) $(VALGRIND_FLAGS)
+valgrind-run-error: run-error
 
 # Règle pour compiler avec l'option -g de gcc afin de pouvoir débugger
 debug: CFLAGS += -g
