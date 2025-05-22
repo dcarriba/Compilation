@@ -43,7 +43,7 @@ all: $(EXECUTABLE)
 
 # Pour compiler l'exécutable
 $(EXECUTABLE): $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
-	rm -f *.dot *.dot.$(DOT_OUTPUT_FORMAT) Tests/*.dot Tests/*.dot.$(DOT_OUTPUT_FORMAT)
+	rm -f *.dot *.dot.$(DOT_OUTPUT_FORMAT) Tests/*.dot Tests/*.dot.$(DOT_OUTPUT_FORMAT) TestsWarning/*.dot TestsWarning/*.dot.$(DOT_OUTPUT_FORMAT)
 	$(CC) $(CFLAGS) $(OBJECTS) $(LEX_OBJECT) $(YACC_OBJECT) -o $(EXECUTABLE)
 	rm -f $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)
 
@@ -113,11 +113,20 @@ run-error: run
 valgrind-run-error: VALGRIND_COMMAND = $(VALGRIND) $(VALGRIND_FLAGS)
 valgrind-run-error: run-error
 
+# Règle qui compile et qui teste l'exécutable sur tous les fichiers TestsWarning/*.c
+run-warning: TEST_DIRECTORY = TestsWarning
+run-warning: ANAYLSE_EXEMPLEMINIC = false
+run-warning: run
+
+# Règle qui compile et qui teste l'exécutable avec valgrind sur tous les fichiers TestsWarning/*.c
+valgrind-run-warning: VALGRIND_COMMAND = $(VALGRIND) $(VALGRIND_FLAGS)
+valgrind-run-warning: run-warning
+
 # Règle pour compiler avec l'option -g de gcc afin de pouvoir débugger
 debug: CFLAGS += -g
 debug: $(EXECUTABLE)
 
 # Règle pour supprimer l'exécutable et tous les fichiers intermédiaires
 clean:
-	rm -f *.dot *.dot.$(DOT_OUTPUT_FORMAT) Tests/*.dot Tests/*.dot.$(DOT_OUTPUT_FORMAT)
+	rm -f *.dot *.dot.$(DOT_OUTPUT_FORMAT) Tests/*.dot Tests/*.dot.$(DOT_OUTPUT_FORMAT) TestsWarning/*.dot TestsWarning/*.dot.$(DOT_OUTPUT_FORMAT)
 	rm -f $(EXECUTABLE) $(LEX_OUTPUT) $(YACC_OUTPUT) $(YACC_HEADER) $(LEX_OBJECT) $(YACC_OBJECT) $(OBJECTS)

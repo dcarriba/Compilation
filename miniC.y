@@ -38,11 +38,11 @@ int nb_dim = 0;
 int *tailles;
 
 void warning(char *s){
-    fprintf(stdout, COLOR_MAGENTA "[Warning] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
+    fprintf(stdout, COLOR_MAGENTA "[Warning] %s - ligne %d\n" COLOR_RESET, s, yylineno);
 }
 
 int yyerror(char *s){
-    fprintf(stderr, COLOR_RED "[Error] %s à la ligne %d\n" COLOR_RESET, s, yylineno);
+    fprintf(stderr, COLOR_RED "[Error] %s - ligne %d\n" COLOR_RESET, s, yylineno);
     error++;
     return 0;
 }
@@ -63,7 +63,7 @@ int yyerror(char *s){
 %type<arbre> fonction
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
-%type<str> type binary_rel binary_comp
+%type<str> type binary_comp
 %type<var> declarateur declarationfonction
 
 %token<var> IDENTIFICATEUR
@@ -78,12 +78,13 @@ int yyerror(char *s){
 %left PLUS MOINS
 %left MUL DIV
 %left LSHIFT RSHIFT
-%left BOR BAND
-%left LAND LOR
+%left BOR
+%left BAND
+%left LOR
+%left LAND
 %nonassoc THEN
 %nonassoc ELSE
 %nonassoc MOINSUNAIRE
-%left REL
 %start programme
 
 %destructor {
@@ -180,10 +181,11 @@ liste_declarateurs:
         {
             symbole_t *s = rechercher(pile_tables_variables, $3);
             if (s != NULL) {
-                char *war = concat(3, "La variable ", $3, " a déjà été déclarée dans le même bloc");
-                warning(war);
-                free(war);
+                char *err = concat(3, "La variable ", $3, " a déjà été déclarée dans le même bloc");
+                yyerror(err);
+                free(err);
             }
+            
             declarer(pile_tables_variables, $3, nb_dim, tailles, INT_T);
             free(tailles);
             tailles = NULL;
@@ -198,6 +200,7 @@ liste_declarateurs:
                 yyerror(err);
                 free(err);
             }
+
             declarer(pile_tables_variables, $1, nb_dim, tailles, INT_T);
             free(tailles);
             tailles = NULL;
@@ -227,17 +230,24 @@ declarateur:
 declarationfonction : 
         type IDENTIFICATEUR '(' push liste_parms ')'
         {
-            if (strcmp($$, "int") == 0) {
+            symbole_t *s = rechercher(pile_tables_fonctions, $2);
+            if (s != NULL) {
+                char *err = concat(3, "La fonction ", $2, " a déjà été déclarée");
+                yyerror(err);
+                free(err);
+            }
+
+            if (strcmp($1, "int") == 0) {
                 declarer(pile_tables_fonctions, $2, length_of_node_list($5), NULL, INT_T);
                 is_void = 0;
                 is_int = 1; 
-            } else if (strcmp($$, "void") == 0) {
+            } else if (strcmp($1, "void") == 0) {
                 declarer(pile_tables_fonctions, $2, length_of_node_list($5), NULL, VOID_T);
                 is_void = 1;
                 is_int = 0; 
             }
 
-            int len = strlen($1) + strlen(", ") + strlen($2) + 1;
+            int len = strlen($2) + strlen(", ") + strlen($1) + 1;
             char *label = malloc(len);
             snprintf(label, len, "%s, %s", $2, $1);
 
@@ -251,11 +261,9 @@ declarationfonction :
 fonction:
         declarationfonction '{' liste_declarations liste_instructions pop'}' 
         {
-            if (is_void == 0 && has_return == 0) {
+            if (is_void == 0 && is_int == 1 && has_return == 0) {
                 warning("Absence de return pour une fonction de type int");
-            } else if (is_int == 0 && has_return == 1) {
-                warning("Return present dans une fonction de type void");
-            }
+            } 
 
             has_return = 0;
 
@@ -269,9 +277,18 @@ fonction:
         }
     |   EXTERN type IDENTIFICATEUR '(' liste_parms ')' ';'
         {
-            declarer(pile_tables_fonctions, $3, n_param,NULL, INT_T);
-            
-            n_param=0;
+            symbole_t *s = rechercher(pile_tables_fonctions, $3);
+            if (s != NULL) {
+                char *err = concat(3, "La fonction ", $3, " a déjà été déclarée");
+                yyerror(err);
+                free(err);
+            }
+
+            if (strcmp($2, "int") == 0) {
+                declarer(pile_tables_fonctions, $3, length_of_node_list($5), NULL, INT_T);
+            } else if (strcmp($2, "void") == 0) {
+                declarer(pile_tables_fonctions, $3, length_of_node_list($5), NULL, VOID_T);
+            }
 
             free($3);
             destroy_node_list($5);
@@ -462,6 +479,10 @@ saut:
         {
             has_return = 1;
 
+            if (is_void == 1 && is_int == 0 && has_return == 1) {
+                warning("Présence d'un return avec une expression de type int dans une fonction de type void");
+            }
+
             node_list *fils = create_node_list(1, $2);
             node *n = create_node("RETURN", "trapezium", "blue", "solid", fils);
             $$ = n;
@@ -481,7 +502,7 @@ affectation:
                 if (nb_dim_util != s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *war = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
+                    char *war = concat(6, "Variable ", extraire_nom_base($1), " a une dimension de ", s_aritee_str, " et non ", nb_dim_util_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
                     warning(war);
@@ -489,11 +510,16 @@ affectation:
                 } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
                     for (int i = 0; i < nb_dim_util; i++) {
                         int indice = get_indice_dimension($1, i);
-                        if (indice >= s->taillesTab[i]|| indice < 0) {
+                        if (indice >= s->taillesTab[i] || indice < 0) {
                             char *incice_str = itoa(indice);
                             char *s_taillesTab_str = itoa(s->taillesTab[i]);
                             char *i_plus_1_str = itoa(i+1);
-                            char *war = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            char *war;
+                            if (indice < 0) {
+                                war = concat(5, "Accés à un indice négatif d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            } else {
+                                war = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            }
                             free(incice_str);
                             free(s_taillesTab_str);
                             free(i_plus_1_str);
@@ -503,7 +529,6 @@ affectation:
                     }
                 }
             }
-
         
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node(":=", "ellipse", "black", "solid", fils);
@@ -530,7 +555,7 @@ appel:
             if (a->aritee != length_of_node_list($3)) {
                 char *aritee = itoa(a->aritee);
                 char *len = itoa(length_of_node_list($3));
-                char *war = concat(4, "Fonction appelée avec ", len, " paramètres au lieu de ", aritee);
+                char *war = concat(6, "Fonction ", $1, " appelée avec ", len, " paramètres au lieu de ", aritee);
                 warning(war);
                 free(len);
                 free(aritee);
@@ -597,7 +622,7 @@ expression:
     |   expression DIV expression
         {
             if (strcmp($3->label, "0") == 0) {
-                warning("division par 0");
+                warning("Division par 0");
             }
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node("/", "ellipse", "black", "solid", fils);
@@ -652,7 +677,7 @@ expression:
                 if (nb_dim_util != s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *war = concat(4, "Variable de dimension ", nb_dim_util_str, " au lieu de ", s_aritee_str);
+                    char *war = concat(6, "Variable ", extraire_nom_base($1), " a une dimension de ", s_aritee_str, " et non ", nb_dim_util_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
                     warning(war);
@@ -664,7 +689,12 @@ expression:
                             char *incice_str = itoa(indice);
                             char *s_taillesTab_str = itoa(s->taillesTab[i]);
                             char *i_plus_1_str = itoa(i+1);
-                            char *war = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            char *war;
+                            if (indice < 0) {
+                                war = concat(5, "Accés à un indice négatif d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            } else {
+                                war = concat(7, "Accés à l'indice ", incice_str, " d'un tableau de taille ", s_taillesTab_str, " (dimension ", i_plus_1_str," du tableau)");
+                            }
                             free(incice_str);
                             free(s_taillesTab_str);
                             free(i_plus_1_str);
@@ -685,14 +715,14 @@ expression:
                 free(war);
             } else {
                 if (a->type != INT_T) {
-                    char *war = concat(3, "Fonction ", $1, " n'est pas de type int");
+                    char *war = concat(3, "Fonction ", $1, " appelée dans une expresion n'est pas de type int");
                     warning(war);
                     free(war);
                 }
                 if (a->aritee != length_of_node_list($3)) {
                     char *aritee = itoa(a->aritee);
                     char *len = itoa(length_of_node_list($3));
-                    char *war = concat(4, "Fonction appelée avec ", len, " paramètres au lieu de ", aritee);
+                    char *war = concat(6, "Fonction ", $1, " appelée avec ", len, " paramètres au lieu de ", aritee);
                     warning(war);
                     free(len);
                     free(aritee);
@@ -735,10 +765,16 @@ condition:
             node *n = create_node("NOT", "ellipse", "black", "solid", fils);
             $$ = n;   
         }
-    |   condition binary_rel condition %prec REL
+    |   condition LAND condition
         {
             node_list *fils = create_node_list(2, $1, $3);
-            node *n = create_node($2, "ellipse", "black", "solid", fils);
+            node *n = create_node("&&", "ellipse", "black", "solid", fils);
+            $$ = n;
+        }
+    |   condition LOR condition
+        {
+            node_list *fils = create_node_list(2, $1, $3);
+            node *n = create_node("||", "ellipse", "black", "solid", fils);
             $$ = n;
         }
     |   '(' condition ')'
@@ -750,17 +786,6 @@ condition:
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node($2, "ellipse", "black", "solid", fils);
             $$ = n;
-        }
-;
-
-binary_rel:
-        LAND
-        {
-            $$ = "&&";
-        }
-    |   LOR
-        {
-            $$ = "||";
         }
 ;
 
@@ -825,14 +850,14 @@ int main(int argc, char* argv[]) {
     }
 
     if (yyparse() != 0 || error) {
-        fprintf(stderr, COLOR_RED "[Error] Erreur lors de l'analyse lexicale, syntaxique ou sémantique. Construction de l'arbre abstrait et génération du fichier DOT impossible.\n" COLOR_RESET);
+        fprintf(stderr, COLOR_RED "Erreur lors de l'analyse lexicale, syntaxique ou sémantique. Aucune génération de fichier DOT.\n" COLOR_RESET);
         return 1;
     }
 
     printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! Construction de l'arbre abstrait sans erreurs.\n" COLOR_RESET);
     
+    /* on enlève ".c" à la fin du nom de fichier pour le nom du fichier dot*/
     char *nom_fichier_dot = strdup(nom_fichier);
-    /* on enlève ".c" à la fin du nom de fichier */
     char *point = strrchr(nom_fichier_dot, '.');
     if (point) *point = '\0';
 

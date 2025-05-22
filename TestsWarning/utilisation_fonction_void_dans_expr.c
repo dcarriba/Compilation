@@ -1,9 +1,9 @@
-int f(){
-    void x;
+void f(){
+
 }
 
 int main(){
     int x;
-    x = f();
+    x = 1+f();
     return 0;
 }

@@ -12,6 +12,11 @@ void f(){
 
 int main(){
     int toto;
-    int toto;
+    int x;
+    int x;
+    {
+        int toto;
+        int toto;
+    }
     return 0;
 }

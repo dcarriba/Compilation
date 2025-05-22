@@ -1,9 +1,5 @@
-int f(){
-    void x;
-}
-
 int main(){
     int x;
-    x = f();
+    x = f(1);
     return 0;
 }
