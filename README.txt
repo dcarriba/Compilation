@@ -82,6 +82,30 @@ Compile et exécute valgrind ./compilateur sur des fichiers tests supplémentair
 Les fichiers seront compilés avec des erreurs, et par conséquent aucun fichier .dot ne sera généré.
 
 
+- Compiler et exécuter sur des fichiers tests produisant des warnings
+
+make run-warning
+
+Compile et exécute ./compilateur sur des fichiers tests supplémentaires produisant des warnings (TestsWarning/*.c).
+Génère l'image .png de chaque fichier .dot généré.
+
+Dépendances : valgrind et dot sont requis. Pour les installer utilisez les commandes suivantes :
+sudo apt-get install valgrind
+sudo apt-get install graphviz
+
+
+- Compiler et exécuter avec valgrind sur des fichiers tests produisant des warnings
+
+make valgrind-run-warning
+
+Compile et exécute valgrind ./compilateur sur des fichiers tests supplémentaires produisant des warnings (TestsWarning/*.c).
+Génère l'image .png de chaque fichier .dot généré.
+
+Dépendances : valgrind et dot sont requis. Pour les installer utilisez les commandes suivantes :
+sudo apt-get install valgrind
+sudo apt-get install graphviz
+
+
 - Compiler pour pouvoir débugger :
 
 make debug

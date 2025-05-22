@@ -46,19 +46,7 @@ void convert_to_dot(tree_list *tl, char *dot_file_name) {
         return;
     }
 
-    /* En enlève les caractères spéciaux comme / . ou - car le nom du digraph ne peut pas les contenir */
-    char *cleaned_name = strdup(dot_file_name);
-    if (!cleaned_name) {
-        fprintf(stderr, COLOR_RED "[Error] Échec d'allocation mémoire pour cleaned_name.\n" COLOR_RESET);
-        exit(EXIT_FAILURE);
-    }
-    for (char *p = cleaned_name; *p; ++p) {
-        if (*p == '/' || *p == '.' || *p == '-') {
-            *p = '_';
-        }
-    }
-    fprintf(out, "digraph %s {\n", cleaned_name);
-    free(cleaned_name);
+    fprintf(out, "digraph my_graph {\n");
 
     int index = 1;
     tree_list *current = tl;

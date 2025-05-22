@@ -227,7 +227,7 @@ int get_nb_dimensions_utilisees(node *var) {
 }
 
 /*
- * Retourne la taille déclarée (le nombre d'indices declarée) d'une dimension donnée d'une variable (prend son neoud en entree)
+ * Retourne le nombre d'indices d'une dimension donnée d'une variable (prend son neoud en entree)
  */
 int get_indice_dimension(node *var, int dim) {
     if (!var || strcmp(var->label, "TAB") != 0) return -1;
@@ -240,5 +240,8 @@ int get_indice_dimension(node *var, int dim) {
     }
 
     if (!cur || !cur->item || !cur->item->label) return -1;
+    if (strcmp(cur->item->label, "-") == 0) {
+        return -1;
+    }
     return atoi(cur->item->label);  
 }

@@ -1,6 +1,10 @@
 #ifndef TABLES_SYMBOLES_H
 #define TABLES_SYMBOLES_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 typedef enum {INT_T, VOID_T} type_t;
 
 typedef struct _symbole_t {
