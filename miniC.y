@@ -39,8 +39,6 @@ int has_default = 0;
 
 int nb_dim = 0;
 int *tailles;
-int *cases;
-int nb_cases = 0;
 
 void warning(char *s){
     fprintf(stdout, COLOR_MAGENTA "[Warning] %s - ligne %d\n" COLOR_RESET, s, yylineno);
@@ -424,12 +422,7 @@ selection:
             $$ = n;
         }
     |   SWITCH '(' expression ')' '{' push liste_switch_case pop '}'
-        {   
-            if (cases != NULL) {
-                free(cases);
-                cases = NULL;
-            }
-            nb_cases = 0;
+        {
             has_default = 0;
             node_list *fils = new_empty_node_list();
             fils->item = $3;
@@ -455,6 +448,7 @@ liste_switch_case:
 switch_case:
         case_constante ':' liste_instructions
         {
+
             node *n = create_node($1, "ellipse", "black", "solid", $3);
             free($1);
             $$ = n;
@@ -469,24 +463,16 @@ switch_case:
 case_constante:
         CASE CONSTANTE
         {   
-            if (cases != NULL) {
-                for (int i = 0; i < nb_cases; i++) {
-                    if (cases[i] == $2) {
-                        char *cons = itoa($2);
-                        char *err = concat(3, "La case ", cons, " a déjà été déclarée");
-                        free(cons);
-                        yyerror(err);
-                        free(err);
-                    }
-                }
+            char *cons = itoa($2);
+            symbole_t *s = rechercher(pile_tables_variables,cons);
+            if(s != NULL){
+                char *err = concat(3,"La case ",cons," est déjà présente dans ce switch");
+                yyerror(err);
+                free(err);
             }
-            nb_cases++;
-            cases = realloc(cases, nb_cases * sizeof(int));
-            if (!cases) {
-                yyerror("Erreur de réallocation de mémoire pour les cases du switch");
-            }
-            cases[nb_cases - 1] = $2;
             
+            declarer(pile_tables_variables,cons, 0, tailles, INT_T);
+            free(cons);
             char *case_num = itoa($2);
             int len = strlen("case ") + strlen(case_num) + 1;
             char *label = malloc(len);
@@ -498,11 +484,14 @@ case_constante:
 
 default:
         DEFAULT
-        {
-            if (has_default) {
-                yyerror("Plusieurs default dans le switch");
+        {   
+            symbole_t *s = rechercher(pile_tables_variables, "DEFAULT");
+            if(s != NULL){
+                yyerror("Deux default présent dans le même switch");
             }
-            has_default++;
+            declarer(pile_tables_variables,"DEFAULT", 0, tailles, INT_T);
+
+            
         }
 ;
 
