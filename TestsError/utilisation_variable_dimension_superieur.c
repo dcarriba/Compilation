@@ -6,7 +6,7 @@ extern int printd(int i);
 int main(){
     int x;
     int tab[10];
-    x = tab;
+    tab[2][3] = x;
     printd(x[2][4]);
     return 0;
 }
