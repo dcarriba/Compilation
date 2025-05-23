@@ -543,15 +543,15 @@ affectation:
                 free(war);
             } else {
                 int nb_dim_util = get_nb_dimensions_utilisees($1);
-                if (nb_dim_util != s->aritee) {
+                if (nb_dim_util > s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *war = concat(6, "Variable ", extraire_nom_base($1), " a une dimension de ", s_aritee_str, " et non ", nb_dim_util_str);
+                    char *err = concat(6, "Variable ", extraire_nom_base($1), " a une dimension de ", s_aritee_str, " et non ", nb_dim_util_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
-                    warning(war);
-                    free(war);
-                } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
+                    yyerror(err);
+                    free(err);
+                } else if (nb_dim_util <= s->aritee && nb_dim_util !=0) {
                     for (int i = 0; i < nb_dim_util; i++) {
                         int indice = get_indice_dimension($1, i);
                         if (indice >= s->taillesTab[i] || indice < 0) {
@@ -718,15 +718,15 @@ expression:
                 free(war);
             } else {
                 int nb_dim_util = get_nb_dimensions_utilisees($1);
-                if (nb_dim_util != s->aritee) {
+                if (nb_dim_util > s->aritee) {
                     char *nb_dim_util_str = itoa(nb_dim_util);
                     char *s_aritee_str = itoa(s->aritee);
-                    char *war = concat(6, "Variable ", extraire_nom_base($1), " a une dimension de ", s_aritee_str, " et non ", nb_dim_util_str);
+                    char *err = concat(6, "Variable ", extraire_nom_base($1), " a une dimension de ", s_aritee_str, " et non ", nb_dim_util_str);
                     free(nb_dim_util_str);
                     free(s_aritee_str);
-                    warning(war);
-                    free(war);
-                } else if (nb_dim_util == s->aritee && nb_dim_util !=0) {
+                    yyerror(err);
+                    free(err);
+                } else if (nb_dim_util <= s->aritee && nb_dim_util !=0) {
                     for (int i = 0; i < nb_dim_util; i++) {
                         int indice = get_indice_dimension($1, i);
                         if (indice >= s->taillesTab[i]|| indice < 0) {
