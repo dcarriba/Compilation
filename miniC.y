@@ -39,6 +39,8 @@ int has_default = 0;
 
 int nb_dim = 0;
 int *tailles;
+int *cases;
+int nb_cases = 0;
 
 void warning(char *s){
     fprintf(stdout, COLOR_MAGENTA "[Warning] %s - ligne %d\n" COLOR_RESET, s, yylineno);
@@ -67,7 +69,7 @@ int yyerror(char *s){
 %type<liste_noeuds> liste_instructions l_instructions liste_expressions l_expr liste_parms l_parms tableau liste_switch_case
 %type<noeud> appel instruction iteration selection condition bloc affectation variable expression saut parm switch_case
 %type<str> type binary_comp
-%type<var> declarateur declarationfonction
+%type<var> declarateur declarationfonction case_constante
 
 %token<var> IDENTIFICATEUR
 %token<ival> CONSTANTE
@@ -422,7 +424,12 @@ selection:
             $$ = n;
         }
     |   SWITCH '(' expression ')' '{' push liste_switch_case pop '}'
-        {
+        {   
+            if (cases != NULL) {
+                free(cases);
+                cases = NULL;
+            }
+            nb_cases = 0;
             has_default = 0;
             node_list *fils = new_empty_node_list();
             fils->item = $3;
@@ -448,15 +455,10 @@ liste_switch_case:
 switch_case:
         case_constante ':' liste_instructions
         {
-            char *case_num = itoa($2);
-            int len = strlen("case ") + strlen(case_num) + 1;
+            
 
-            char *label = malloc(len);
-            snprintf(label, len, "case %s", case_num);
-
-            node *n = create_node(label, "ellipse", "black", "solid", $4);
-            free(case_num);
-            free(label);
+            node *n = create_node($1, "ellipse", "black", "solid", $3);
+            free($1);
             $$ = n;
         }
     |   default ':' liste_instructions
@@ -468,8 +470,31 @@ switch_case:
 
 case_constante:
         CASE CONSTANTE
-        {
-
+        {   
+            if (cases != NULL) {
+                for (int i = 0; i < nb_cases; i++) {
+                    if (cases[i] == $2) {
+                        char *cons = itoa($2);
+                        char *err = concat(3, "La case ", cons, " a déjà été déclarée");
+                        free(cons);
+                        yyerror(err);
+                        free(err);
+                    }
+                }
+            }
+            nb_cases++;
+            cases = realloc(cases, nb_cases * sizeof(int));
+            if (!cases) {
+                yyerror("Erreur de réallocation de mémoire pour les cases du switch");
+            }
+            cases[nb_cases - 1] = $2;
+            
+            char *case_num = itoa($2);
+            int len = strlen("case ") + strlen(case_num) + 1;
+            char *label = malloc(len);
+            snprintf(label, len, "case %s", case_num);
+            $$ = label;
+            free(case_num);
         }
 ;
 
