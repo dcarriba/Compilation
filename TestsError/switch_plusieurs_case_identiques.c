@@ -5,16 +5,7 @@ int main(){
     {
     case 1:
         i = 10*i;
-        switch (i)
-        {
-        case 1:
-            i = 10*i;
-            break;
-        
-        default:
-            break;
-        }
-    break;
+        break;
     
     default:
         break;
