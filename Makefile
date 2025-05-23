@@ -15,13 +15,13 @@ YACC_HEADER = $(YACC_OUTPUT:.c=.h)
 LEX_OBJECT = $(LEX_OUTPUT:.c=.o)
 YACC_OBJECT = $(YACC_OUTPUT:.c=.o)
 
-# Pour la règle valgrind-run
+# Pour exécuter avec valgrind et voir les fuites mémoires
 VALGRIND = valgrind
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all -s
 
 # Pour générer les graphiques dot
 DOT = dot
-DOT_OUTPUT_FORMAT = png
+DOT_OUTPUT_FORMAT = pdf
 
 # On récupère tous les fichiers utils/*.c
 SRCS = $(wildcard utils/*.c)
@@ -29,14 +29,14 @@ SRCS = $(wildcard utils/*.c)
 # Pour générer les fichiers objets de ces fichiers
 OBJECTS = $(SRCS:.c=.o)
 
-# Pour afficher sur le shell en couleur
+# Pour afficher sur le terminal en couleur
 RED     := \033[1;31m
 GREEN   := \033[1;32m
 YELLOW  := \033[1;33m
 CYAN    := \033[1;36m
 RESET   := \033[0m
 
-.PHONY: all clean run
+.PHONY: all clean run debug valgrind-run run-error valgrind-run-error run-warning valgrind-run-warning
 
 # Règle pour compiler
 all: $(EXECUTABLE)

@@ -44,7 +44,7 @@ make run
 
 Compile et exécute `./compilateur` sur tous les fichiers tests (exempleminiC.c et Tests/*.c).
 
-Génère l'image `.png` de chaque fichier `.dot` généré. 
+Génère le `.pdf` de chaque fichier `.dot` généré. 
 
 Dépendance : `dot` est requis. Pour l'installer utilisez la commande suivante :
 
@@ -58,7 +58,7 @@ sudo apt-get install graphviz
 make clean
 ```
 
-Supprime l'exécutable ainsi que les fichiers `.dot` et `.png` généré auparavant.
+Supprime l'exécutable ainsi que les fichiers `.dot` et `.pdf` généré auparavant.
 
 ### Compiler et exécuter avec `valgrind` sur tous les fichiers tests
 
@@ -68,7 +68,7 @@ make valgrind-run
 
 Compile et exécute `valgrind ./compilateur` sur tous les fichiers tests (exempleminiC.c et Tests/*.c).
 
-Génère l'image `.png` de chaque fichier `.dot` généré.
+Génère le `.pdf` de chaque fichier `.dot` généré.
 
 Dépendances : `valgrind` et `dot` sont requis. Pour les installer utilisez les commandes suivantes :
 
@@ -105,7 +105,7 @@ make run-warning
 
 Compile et exécute `./compilateur` sur des fichiers tests supplémentaires produisant des warnings (TestsWarning/*.c).
 
-Génère l'image `.png` de chaque fichier `.dot` généré.
+Génère le `.pdf` de chaque fichier `.dot` généré.
 
 Dépendances : `valgrind` et `dot` sont requis. Pour les installer utilisez les commandes suivantes :
 
@@ -122,7 +122,7 @@ make valgrind-run-warning
 
 Compile et exécute `valgrind ./compilateur` sur des fichiers tests supplémentaires produisant des warnings (TestsWarning/*.c).
 
-Génère l'image `.png` de chaque fichier `.dot` généré.
+Génère le `.pdf` de chaque fichier `.dot` généré.
 
 Dépendances : `valgrind` et `dot` sont requis. Pour les installer utilisez les commandes suivantes :
 

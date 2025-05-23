@@ -18,10 +18,10 @@ int yylex_destroy();
 
 int error = 0;
 
-/* Fichier en entrée */
+/* Fichier .c en entrée */
 FILE* fichier = NULL;
 
-/* Arbre Abstrait du programme */
+/* Arbre abstrait du programme .c en entrée */
 tree_list *arbre_abstrait = NULL;
 
 /* Pile avec les tables de symboles des variables */
@@ -29,10 +29,13 @@ table_t *pile_tables_variables = NULL;
 /* Pile avec les tables de symboles des fonctions */
 table_t *pile_tables_fonctions = NULL;
 
+/* Variables globales utile pour gérer des erreurs sémantiques*/
 int n_param = 0;
 int is_void = 0;
 int is_int = 0;
 int has_return = 0;
+
+int has_default = 0;
 
 int nb_dim = 0;
 int *tailles;
@@ -68,11 +71,11 @@ int yyerror(char *s){
 
 %token<var> IDENTIFICATEUR
 %token<ival> CONSTANTE
-%token<str> VOID INT
+%token VOID INT
 %token FOR WHILE IF ELSE SWITCH CASE DEFAULT
 %token BREAK RETURN
-%token<str> PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
-%token<str> GEQ LEQ EQ NEQ 
+%token PLUS MOINS MUL DIV LSHIFT RSHIFT BAND BOR LAND LOR LT GT 
+%token GEQ LEQ EQ NEQ 
 %token NOT EXTERN
 
 %left PLUS MOINS
@@ -420,6 +423,7 @@ selection:
         }
     |   SWITCH '(' expression ')' '{' push liste_switch_case pop '}'
         {
+            has_default = 0;
             node_list *fils = new_empty_node_list();
             fils->item = $3;
             fils->suivant = $7;
@@ -442,7 +446,7 @@ liste_switch_case:
 ;
 
 switch_case:
-        CASE CONSTANTE ':' liste_instructions
+        case_constante ':' liste_instructions
         {
             char *case_num = itoa($2);
             int len = strlen("case ") + strlen(case_num) + 1;
@@ -455,10 +459,27 @@ switch_case:
             free(label);
             $$ = n;
         }
-    |   DEFAULT ':' liste_instructions
+    |   default ':' liste_instructions
         {
             node *n = create_node("case default", "ellipse", "black", "solid", $3);
             $$ = n;
+        }
+;
+
+case_constante:
+        CASE CONSTANTE
+        {
+
+        }
+;
+
+default:
+        DEFAULT
+        {
+            if (has_default) {
+                yyerror("Plusieurs default dans le switch");
+            }
+            has_default++;
         }
 ;
 
@@ -856,7 +877,7 @@ int main(int argc, char* argv[]) {
 
     printf(COLOR_GREEN "Analyse lexicale, syntaxique et sémantique valide! Construction de l'arbre abstrait sans erreurs.\n" COLOR_RESET);
     
-    /* on enlève ".c" à la fin du nom de fichier pour le nom du fichier dot*/
+    /* on enlève ".c" à la fin du nom du fichier pour le nom du fichier dot*/
     char *nom_fichier_dot = strdup(nom_fichier);
     char *point = strrchr(nom_fichier_dot, '.');
     if (point) *point = '\0';

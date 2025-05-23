@@ -3,7 +3,7 @@
  */
 void f(){
     int toto, x, y, z, t;
-    if (0 == 1){
+    if (1 == 1){
         return;
     }
     toto = 1;
