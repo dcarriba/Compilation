@@ -652,7 +652,7 @@ expression:
     |   expression DIV expression
         {
             if (strcmp($3->label, "0") == 0) {
-                warning("Division par 0");
+                yyerror("Division par 0");
             }
             node_list *fils = create_node_list(2, $1, $3);
             node *n = create_node("/", "ellipse", "black", "solid", fils);
