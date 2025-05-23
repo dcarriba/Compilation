@@ -35,8 +35,6 @@ int is_void = 0;
 int is_int = 0;
 int has_return = 0;
 
-int has_default = 0;
-
 int nb_dim = 0;
 int *tailles;
 
@@ -423,7 +421,6 @@ selection:
         }
     |   SWITCH '(' expression ')' '{' push liste_switch_case pop '}'
         {
-            has_default = 0;
             node_list *fils = new_empty_node_list();
             fils->item = $3;
             fils->suivant = $7;
@@ -448,7 +445,6 @@ liste_switch_case:
 switch_case:
         case_constante ':' liste_instructions
         {
-
             node *n = create_node($1, "ellipse", "black", "solid", $3);
             free($1);
             $$ = n;
@@ -464,20 +460,23 @@ case_constante:
         CASE CONSTANTE
         {   
             char *cons = itoa($2);
-            symbole_t *s = rechercher(pile_tables_variables,cons);
+
+            symbole_t *s = rechercher(pile_tables_variables, cons);
             if(s != NULL){
-                char *err = concat(3,"La case ",cons," est déjà présente dans ce switch");
+                char *err = concat(3, "La case ", cons, " est déjà présente dans ce switch");
                 yyerror(err);
                 free(err);
             }
             
-            declarer(pile_tables_variables,cons, 0, tailles, INT_T);
+            declarer(pile_tables_variables, cons, 0, tailles, INT_T);
             free(cons);
+
             char *case_num = itoa($2);
             int len = strlen("case ") + strlen(case_num) + 1;
             char *label = malloc(len);
             snprintf(label, len, "case %s", case_num);
             free(case_num);
+            
             $$ = label;
         }
 ;
@@ -485,13 +484,11 @@ case_constante:
 default:
         DEFAULT
         {   
-            symbole_t *s = rechercher(pile_tables_variables, "DEFAULT");
+            symbole_t *s = rechercher(pile_tables_variables, "default");
             if(s != NULL){
-                yyerror("Deux default présent dans le même switch");
+                yyerror("Plusieurs default présent dans le même switch");
             }
-            declarer(pile_tables_variables,"DEFAULT", 0, tailles, INT_T);
-
-            
+            declarer(pile_tables_variables, "default", 0, tailles, INT_T);
         }
 ;
 
