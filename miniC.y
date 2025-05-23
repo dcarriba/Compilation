@@ -455,8 +455,6 @@ liste_switch_case:
 switch_case:
         case_constante ':' liste_instructions
         {
-            
-
             node *n = create_node($1, "ellipse", "black", "solid", $3);
             free($1);
             $$ = n;
@@ -493,8 +491,8 @@ case_constante:
             int len = strlen("case ") + strlen(case_num) + 1;
             char *label = malloc(len);
             snprintf(label, len, "case %s", case_num);
-            $$ = label;
             free(case_num);
+            $$ = label;
         }
 ;
 
